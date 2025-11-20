@@ -119,35 +119,21 @@ import Navbar from '../components/Navbar.vue'
 </script>
 
 <script>
+import Navbar from '../components/Navbar.vue'
+import axios from 'axios'; // Import axios
+
 export default {
   name: 'AdoptView',
+  components: { Navbar }, // Pastikan Navbar didaftarkan jika pakai Options API
   data() {
     return {
-      // currentView DIHAPUS karena semua tampilan ditampilkan di 1 halaman
       isModalOpen: false,
       selectedCat: {},
-
-      // Data untuk Daftar Kucing
-      availableCats: [
-        { name: 'Mudirk', image: '../src/assets/img/Hero-adopt.jpg', age: '1 Tahun', gender: 'Jantan', breed: 'Local', character: 'Lincah', vaccinationStatus: 'Sudah' },
-        { name: 'Mujair', image: '../src/assets/img/Hero-adopt.jpg', age: '9 Bulan', gender: 'Jantan', breed: 'British Short Hair', character: 'Jinak', vaccinationStatus: 'Sudah' },
-        { name: 'Kremes', image: '../src/assets/img/Hero-adopt.jpg', age: '2 Tahun', gender: 'Betina', breed: 'Anggora', character: 'Manja', vaccinationStatus: 'Belum' },
-        { name: 'Cemong', image: '../src/assets/img/Hero-adopt.jpg', age: '6 Bulan', gender: 'Betina', breed: 'Local', character: 'Aktif', vaccinationStatus: 'Sudah' },
-        { name: 'Bule', image: '../src/assets/img/Hero-adopt.jpg', age: '1 Tahun', gender: 'Jantan', breed: 'Persia', character: 'Pendiam', vaccinationStatus: 'Sudah' },
-        { name: 'Gombloh', image: '../src/assets/img/Hero-adopt.jpg', age: '4 Bulan', gender: 'Jantan', breed: 'Local', character: 'Jinak', vaccinationStatus: 'Belum' },
-        { name: 'Moci', image: '../src/assets/img/Hero-adopt.jpg', age: '9 Bulan', gender: 'Betina', breed: 'Scottish Fold', character: 'Lincah', vaccinationStatus: 'Sudah' },
-        { name: 'Ciko', image: '../src/assets/img/Hero-adopt.jpg', age: '3 Tahun', gender: 'Jantan', breed: 'Local', character: 'Pendiam', vaccinationStatus: 'Sudah' },
-      ],
-      // Data untuk Verifikasi Adopsi
-      verificationList: [
-        { name: 'Abul', age: '9 bulan', dob: '1 Desember 2024', status: 'Proses pemeriksaan', image: '../src/assets/img/Hero-adopt.jpg' },
-        { name: 'Abul', age: '9 month', dob: '1 december 2024', status: 'Proses pemeriksaan', image: '../src/assets/img/Hero-adopt.jpg' },
-      ],
-      // Data untuk Sejarah Adopsi
-      historyList: [
-        { name: 'abul', age: '9 month', dob: '1 december 2024', duration: '1 Minggu', image: '../src/assets/img/Hero-adopt.jpg' },
-        { name: 'abul', age: '9 month', dob: '1 december 2024', duration: '1 Minggu', image: '../src/assets/img/Hero-adopt.jpg' },
-      ]
+      // availableCats sekarang kosong dulu, nanti diisi dari API
+      availableCats: [], 
+      // ... data lain (verificationList, historyList) biarkan dulu
+      verificationList: [],
+      historyList: []
     };
   },
   methods: {
@@ -166,17 +152,31 @@ export default {
       this.selectedCat = {};
     },
     handleAdoptClick() {
-      // 1. Tampilkan pesan notifikasi
+      // Cek apakah user sudah login
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert("Silakan login terlebih dahulu untuk mengadopsi!");
+        this.$router.push('/login');
+        return;
+      }
+      
       alert("Permintaan adopsi telah diterima, silahkan Verifikasi Adopsi!");
-
-      // 2. Tutup Modal
       this.closeCatModal();
-
-      // 3. Scroll ke bagian List Kucing Saya (My List Section)
-      this.$nextTick(() => {
-        this.scrollToSection('list-view');
-      });
+    },
+    // Fungsi ambil data kucing
+    async fetchCats() {
+      try {
+        const response = await axios.get('http://localhost:3000/api/cats');
+        // Masukkan data dari backend ke variabel state
+        this.availableCats = response.data;
+      } catch (error) {
+        console.error("Gagal mengambil data kucing:", error);
+      }
     }
+  },
+  // Dipanggil otomatis saat halaman dibuka
+  mounted() {
+    this.fetchCats();
   }
 }
 </script>

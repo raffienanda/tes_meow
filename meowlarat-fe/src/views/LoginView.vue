@@ -2,23 +2,24 @@
   <div class="login-page">
     <div class="login-container">
       <div class="left-side">
-        <div class="mobile-title">Miaw-miaw Menunggumu Kamu!</div>
-
         <div class="logo">
           <img src="../assets/img/logo.png" alt="Logo MeowLarat" />
           <h2>MeowLarat</h2>
         </div>
-
         <h1>Hello,<br />Welcome Back</h1>
 
-        <form class="login-form">
-          <input type="email" placeholder="Email" />
-          <input type="password" placeholder="Password" />
+        <form class="login-form" @submit.prevent="handleLogin">
+          <input type="text" v-model="username" placeholder="Username" required />
+          <input type="password" v-model="password" placeholder="Password" required />
+          
           <div class="options">
             <label><input type="checkbox" /> Ingat saya</label>
             <a href="#">Lupa Password?</a>
           </div>
-          <button type="submit" class="signin-btn">Sign In</button>
+          
+          <button type="submit" class="signin-btn" :disabled="isLoading">
+            {{ isLoading ? 'Loading...' : 'Sign In' }}
+          </button>
         </form>
 
         <p class="signup-text">
@@ -34,6 +35,41 @@
     </div>
   </div>
 </template>
+
+<script setup>
+import { ref } from 'vue';
+import axios from 'axios';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+const username = ref('');
+const password = ref('');
+const isLoading = ref(false);
+
+const handleLogin = async () => {
+  isLoading.value = true;
+  try {
+    // Kirim request login
+    const response = await axios.post('http://localhost:3000/api/auth/login', {
+      username: username.value,
+      password: password.value
+    });
+
+    // Simpan Token dan Info User ke LocalStorage
+    // Ini penting agar user tetap login meski halaman di-refresh
+    localStorage.setItem('token', response.data.token);
+    localStorage.setItem('user', JSON.stringify(response.data.user));
+
+    alert('Login Berhasil! Selamat datang ' + response.data.user.nama);
+    router.push('/'); // Pindah ke Beranda
+  } catch (error) {
+    console.error(error);
+    alert(error.response?.data?.message || 'Username atau Password salah');
+  } finally {
+    isLoading.value = false;
+  }
+};
+</script>
 
 <style scoped>
 body {

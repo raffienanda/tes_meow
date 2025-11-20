@@ -1,6 +1,7 @@
 <template>
-  <Navbar />
-  <!-- Main-Welcome (Hero) Section -->
+  <NavbarLogin v-if="isLoggedIn" />
+  <Navbar v-else />
+
   <section class="hero">
     <div class="hero-text">
       <h1>Selamat Datang</h1>
@@ -12,24 +13,23 @@
     </div>
   </section>
   
-  <!-- Stats Section -->
   <section class="stats">
-    <div class="stat-item">
-      <img src="../assets/img/stats_kucing.png" alt="ikon kucing" ></img>
+     <div class="stat-item">
+      <img src="../assets/img/stats_kucing.png" alt="ikon kucing" >
       <div class="ket-stat">
         <h2>999</h2>
         <p>Kucing Bisa Kamu Adopsi</p>
       </div>
     </div>
     <div class="stat-item">
-      <img src="../assets/img/stats_adopsi.png" alt="ikon adopsi" ></img>
+      <img src="../assets/img/stats_adopsi.png" alt="ikon adopsi" >
       <div class="ket-stat">
         <h2>999</h2>
         <p>Kucing Telah Diadopsi</p>
       </div>
     </div>
     <div class="stat-item">
-      <img src="../assets/img/stats_shelter.png" alt="ikon shelter" ></img>
+      <img src="../assets/img/stats_shelter.png" alt="ikon shelter" >
       <div class="ket-stat">
         <h2>999</h2>
         <p>Shelter Telah Bekerjasama</p>
@@ -39,7 +39,19 @@
 </template>
 
 <script setup>
-  import Navbar from '../components/Navbar.vue'
+import { ref, onMounted } from 'vue'; // Import ref dan onMounted
+import Navbar from '../components/Navbar.vue';
+import NavbarLogin from '../components/NavbarLogin.vue'; // Import NavbarLogin
+
+const isLoggedIn = ref(false);
+
+onMounted(() => {
+  // Cek apakah ada token di localStorage saat halaman dimuat
+  const token = localStorage.getItem('token');
+  if (token) {
+    isLoggedIn.value = true;
+  }
+});
 </script>
 
 <style scoped>

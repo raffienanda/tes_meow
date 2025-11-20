@@ -1,38 +1,77 @@
 <template>
   <div class="register-page">
     <div class="register-container">
-      <!-- Kiri -->
       <div class="left-side">
         <h3>Miaw-miaw Menunggumu Kamu!</h3>
         <img src="../assets/img/cat.png" alt="Kucing" class="cat-img" />
       </div>
 
-      <!-- Kanan -->
       <div class="right-side">
         <h1>Membuat Akun</h1>
-        <form class="register-form">
-          <input type="text" placeholder="Nama Lengkap" />
-          <input type="email" placeholder="Email" />
-          <input type="tel" placeholder="Nomor Telepon" />
-          <input type="password" placeholder="Password" />
+        <form class="register-form" @submit.prevent="handleRegister">
+          <input type="text" v-model="form.nama" placeholder="Nama Lengkap" required />
+          <input type="text" v-model="form.username" placeholder="Username" required />
+          <input type="email" v-model="form.email" placeholder="Email" required />
+          <input type="tel" v-model="form.phone" placeholder="Nomor Telepon" required />
+          <input type="password" v-model="form.password" placeholder="Password" required />
+          <input type="text" v-model="form.bio" placeholder="Bio Singkat (Opsional)" />
 
           <label class="checkbox">
-            <input type="checkbox" />
+            <input type="checkbox" required />
             Saya menyetujui <a href="#">kebijakan privasi</a>
           </label>
 
-          <button type="submit" class="register-btn">Buat</button>
+          <button type="submit" class="register-btn" :disabled="isLoading">
+            {{ isLoading ? 'Memproses...' : 'Buat Akun' }}
+          </button>
         </form>
 
         <p class="login-text">
           Sudah memiliki akun? <router-link to="/login">Login</router-link>
         </p>
-
         <router-link to="/" class="back-link">← Beranda</router-link>
       </div>
     </div>
   </div>
 </template>
+
+<script setup>
+import { ref, reactive } from 'vue';
+import axios from 'axios';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+const isLoading = ref(false);
+
+// Data Form (sesuai dengan body request di Postman tadi)
+const form = reactive({
+  nama: '',
+  username: '',
+  email: '',
+  phone: '',
+  password: '',
+  bio: '',
+  img_url: 'default.png' // Default value
+});
+
+const handleRegister = async () => {
+  isLoading.value = true;
+  try {
+    // Kirim data ke Backend
+    const response = await axios.post('http://localhost:3000/api/auth/register', form);
+    
+    alert('Registrasi Berhasil! Silakan Login.');
+    router.push('/login'); // Pindahkan user ke halaman login
+  } catch (error) {
+    console.error(error);
+    // Tampilkan pesan error dari backend jika ada
+    const pesan = error.response?.data?.message || 'Terjadi kesalahan saat registrasi';
+    alert(pesan);
+  } finally {
+    isLoading.value = false;
+  }
+};
+</script>
 
 <style scoped>
 body {

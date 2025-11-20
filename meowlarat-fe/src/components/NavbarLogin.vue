@@ -31,7 +31,7 @@
             <img src="../assets/img/cat.png" alt="User Profile" class="profile-avatar" />
             <div class="dropdown-menu">
               <router-link to="/profil" class="dropdown-item">Profil Saya</router-link>
-              <router-link to="/login" class="dropdown-item">Logout</router-link>
+              <a @click="handleLogout" class="dropdown-item" style="cursor: pointer;">Logout</a>
             </div>
           </div>
         </div>
@@ -45,7 +45,9 @@
         <img src="../assets/img/profil.png" alt="User Profile" class="profile-avatar" />
         <div class="dropdown-menu">
           <router-link to="/profil" class="dropdown-item">Profil Saya</router-link>
-          <router-link to="/login" class="dropdown-item">Logout</router-link>
+
+          <a @click="handleLogout" class="dropdown-item" style="cursor: pointer;">Logout</a>
+
         </div>
       </div>
     </div>
@@ -54,7 +56,9 @@
 
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "vue-router"; // Import router
 
+const router = useRouter();
 const isMenuOpen = ref(false);
 
 function toggleMenu() {
@@ -63,6 +67,16 @@ function toggleMenu() {
 
 function closeMenu() {
   isMenuOpen.value = false;
+}
+
+// Tambahkan fungsi logout
+function handleLogout() {
+  // 1. Hapus token dari penyimpanan
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+
+  // 2. Redirect ke halaman login atau beranda
+  router.push('/login');
 }
 </script>
 
@@ -209,7 +223,7 @@ function closeMenu() {
     display: flex;
   }
 
- .nav-links { 
+  .nav-links {
     position: absolute;
     top: 100%;
     left: 0;
