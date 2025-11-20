@@ -1,4 +1,4 @@
-1,https://placekitten.com/300/300,Milo,2,Male,Domestic,"Jinak, suka tidur dan dielus",true,false,
-2,https://placekitten.com/301/300,Luna,1,Female,Anggora,"Aktif, suka main bola",true,false,
-3,https://placekitten.com/302/300,Simba,3,Male,Persia,"Tenang, mudah beradaptasi",true,true,catlover1
-4,https://placekitten.com/303/300,Nala,4,Female,Domestic,"Protektif, cerewet",false,true,catlover2
+1,https://placekitten.com/300/300, Milo, "2 tahun", Male, Domestic, "suka tidur dan dielus", sudah, belum,
+2,https://placekitten.com/301/300, Luna, "1 tahun", Female, Anggora, "suka main bola", sudah, belum,
+3,https://placekitten.com/302/300, Simba, "3 tahun", Male, Persia, Tenang, sudah, belum,
+4,https://placekitten.com/303/300, Nala, "4 bulan", Female, Domestic, Protektif, false, belum,
