@@ -26,7 +26,7 @@
       <!-- Profil pindah ke bawah nav link di mode mobile -->
       <div class="mobile-profile" v-if="isMenuOpen">
         <div class="profile-section">
-          <span class="username">Raffie Arsy</span>
+          <span class="username">{{ userName }}</span>
           <div class="profile-dropdown">
             <img src="../assets/img/cat.png" alt="User Profile" class="profile-avatar" />
             <div class="dropdown-menu">
@@ -40,7 +40,7 @@
 
     <!-- Profil (hanya desktop) -->
     <div class="profile-section desktop-profile">
-      <span class="username">Raffie Arsy</span>
+      <span class="username">{{ userName }}</span>
       <div class="profile-dropdown">
         <img src="../assets/img/profil.png" alt="User Profile" class="profile-avatar" />
         <div class="dropdown-menu">
@@ -55,11 +55,26 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router"; // Import router
+import { ref, onMounted } from "vue"; // Tambahkan onMounted
+import { useRouter } from "vue-router";
 
 const router = useRouter();
 const isMenuOpen = ref(false);
+const userName = ref("Pengguna"); // Default text jika data belum ada
+
+// Saat komponen dipasang (mounted), ambil data dari LocalStorage
+onMounted(() => {
+  const userStored = localStorage.getItem("user");
+  if (userStored) {
+    try {
+      const user = JSON.parse(userStored);
+      // Ambil 'nama' dari object user. Pastikan saat login backend mengirim field 'nama'
+      userName.value = user.username || "Pengguna"; 
+    } catch (e) {
+      console.error("Gagal parsing data user", e);
+    }
+  }
+});
 
 function toggleMenu() {
   isMenuOpen.value = !isMenuOpen.value;
@@ -69,14 +84,12 @@ function closeMenu() {
   isMenuOpen.value = false;
 }
 
-// Tambahkan fungsi logout
 function handleLogout() {
-  // 1. Hapus token dari penyimpanan
   localStorage.removeItem('token');
   localStorage.removeItem('user');
-
-  // 2. Redirect ke halaman login atau beranda
-  router.push('/login');
+  router.push('/login').then(() => {
+    window.location.reload(); // Reload agar navbar kembali ke mode tamu
+  });
 }
 </script>
 

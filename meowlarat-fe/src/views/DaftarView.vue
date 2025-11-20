@@ -51,7 +51,7 @@ const form = reactive({
   phone: '',
   password: '',
   bio: '',
-  img_url: 'default.png' // Default value
+  img_url: 'default.png'
 });
 
 const handleRegister = async () => {
