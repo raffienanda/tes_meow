@@ -1,0 +1,162 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  username String @id @db.VarChar(255) // Primary Key adalah username
+  email    String @unique @db.VarChar(255)
+  nama     String @db.VarChar(255)
+  phone    String @db.VarChar(15)
+  password String @db.VarChar(255)
+  bio      String @db.VarChar(255)
+  img_url  String @db.VarChar(255)
+
+  // Relasi (One-to-Many)
+  threads   Thread[]
+  posts     Post[]
+  donasi    Donasi[]
+  adoptedCats Cat[]   @relation("CatAdopter") // Relasi ke kucing yang diadopsi
+
+  @@map("users") // Memastikan nama tabel di DB tetap "users"
+}
+
+model Thread {
+  id       Int    @id @default(autoincrement())
+  nama     String @db.VarChar(255) // Judul Thread
+  category String @db.VarChar(255)
+  teks     String @db.Text
+  username String @db.VarChar(255)
+
+  // Relasi
+  user  User   @relation(fields: [username], references: [username])
+  posts Post[]
+
+  @@map("threads")
+}
+
+model Post {
+  id        Int    @id @default(autoincrement())
+  teks      String @db.Text
+  id_thread Int
+  username  String @db.VarChar(255)
+
+  // Relasi
+  thread Thread @relation(fields: [id_thread], references: [id])
+  user   User   @relation(fields: [username], references: [username])
+
+  @@map("posts")
+}
+
+model Metode {
+  id   Int    @id @default(autoincrement())
+  nama String @db.VarChar(255)
+
+  donasi Donasi[]
+
+  @@map("metode")
+}
+
+model Donasi {
+  id       Int    @id @default(autoincrement())
+  nominal  Int
+  pesan    String @db.Text
+  metode   Int
+  username String @db.VarChar(255)
+
+  // Relasi
+  metodeRel Metode @relation(fields: [metode], references: [id])
+  user      User   @relation(fields: [username], references: [username])
+
+  @@map("donasi")
+}
+
+model Cat {
+  id            Int     @id @default(autoincrement())
+  img_url       String  @db.VarChar(255)
+  nama          String  @db.VarChar(255)
+  age           String  @db.VarChar(255)
+  gender        String  @db.VarChar(10)
+  ras           String  @db.VarChar(255)
+  karakteristik String  @db.Text
+  isVaccinated  String  @db.VarChar(50)
+  isAdopted     String  @db.VarChar(50)
+  adopter       String? @db.VarChar(255) // Nullable karena kucing mungkin belum diadopsi
+
+  // Relasi
+  user          User?           @relation("CatAdopter", fields: [adopter], references: [username])
+  tanggungJawab TanggungJawab[]
+
+  @@map("cat")
+}
+
+model TanggungJawab {
+  id               Int     @id @default(autoincrement())
+  id_cat           Int
+  gambarMakanan1   String? @db.VarChar(255)
+  gambarMakanan2   String? @db.VarChar(255)
+  gambarMakanan3   String? @db.VarChar(255)
+  gambarAktivitas1 String? @db.VarChar(255)
+  gambarAktivitas2 String? @db.VarChar(255)
+  gambarAktivitas3 String? @db.VarChar(255)
+  gambarKotoran1   String? @db.VarChar(255)
+  gambarKotoran2   String? @db.VarChar(255)
+  gambarKotoran3   String? @db.VarChar(255)
+
+  // Relasi
+  cat Cat @relation(fields: [id_cat], references: [id])
+
+  @@map("tanggungJawab")
+}
+
+model Artikel {
+  id       Int    @id @default(autoincrement())
+  img_url  String @db.VarChar(255)
+  nama     String @db.VarChar(255)
+  category String @db.VarChar(255)
+  teks     String @db.Text
+
+  @@map("artikel")
+}
+
+model Shelter {
+  id     Int    @id @default(autoincrement())
+  nama   String @db.VarChar(255)
+  lokasi String @db.VarChar(255)
+
+  @@map("shelter")
+}
+
+model Laporan {
+  id        Int    @id @default(autoincrement())
+  category  String @db.VarChar(255)
+  lokasi    String @db.VarChar(255)
+  deskripsi String @db.Text
+  img_url   String @db.VarChar(255)
+  notes     String @db.Text
+
+  @@map("laporan")
+}
+
+model PetPlace {
+  id       Int    @id @default(autoincrement())
+  nama     String @db.VarChar(255)
+  category String @db.VarChar(255)
+  img_url  String @db.VarChar(255)
+
+  @@map("petPlace")
+}
+
+model TokoOnline {
+  id        Int    @id @default(autoincrement())
+  deskripsi String @db.Text
+  notes     String @db.Text
+
+  @@map("tokoOnline")
+}
