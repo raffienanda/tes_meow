@@ -10,6 +10,8 @@ import ForumView from '@/views/ForumView.vue'
 import DonasiView from '@/views/DonasiView.vue'
 import FindPlaceView from '@/views/FindPlaceView.vue'
 import FormView from '@/views/FormView.vue'
+import ForgotPassword from '@/views/ForgotPassword.vue'
+import ResetPassword from '@/views/ResetPassword.vue'
 
 const routes = [
   {
@@ -74,6 +76,16 @@ const routes = [
     path: '/form',
     name: 'FormView',
     component: FormView
+  },
+  {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: ForgotPassword
+  },
+  {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: ResetPassword
   }
   
   // contoh rute tambahan:
