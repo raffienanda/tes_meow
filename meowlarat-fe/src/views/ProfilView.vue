@@ -19,15 +19,22 @@
     </div>
 
     <!-- Bagian Kucing Baru Diadopsi -->
-    <h3 class="section-title">Baru Diadopsi</h3>
-    <div class="adopted-card">
-      <img class="cat-photo" src="../assets/img/cat-donasi.png" alt="Kucing Diadopsi" />
-      <div class="cat-info">
-        <p><strong>Nama :</strong> abul</p>
-        <p><strong>Umur :</strong> 9 Bulan</p>
-        <p><strong>Tanggal Lahir :</strong> 1 December 2024</p>
-        <p><strong>Diadopsi Selama :</strong> 1 Minggu</p>
+    <h3 class="section-title">Kucing Diadopsi</h3>
+    
+    <div v-if="adoptedCats.length > 0" class="cats-container">
+      <div v-for="cat in adoptedCats" :key="cat.id" class="adopted-card">
+        <img class="cat-photo" :src="cat.img_url || '../src/assets/img/cat-donasi.png'" alt="Kucing Diadopsi" />
+        <div class="cat-info">
+          <p><strong>Nama :</strong> {{ cat.nama }}</p>
+          <p><strong>Umur :</strong> {{ cat.age }}</p>
+          <p><strong>Ras :</strong> {{ cat.ras }}</p>
+          <p><strong>Status :</strong> {{ cat.isVaccinated === 'Ya' ? 'Sudah Vaksin' : 'Belum Vaksin' }}</p>
+        </div>
       </div>
+    </div>
+
+    <div v-else class="no-cats">
+      <p>Belum ada kucing yang diadopsi.</p>
     </div>
 
     <router-link to="/adopsi#list-view" class="lainnya">Lainnya</router-link>
@@ -61,25 +68,100 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import NavbarLogin from '../components/NavbarLogin.vue';
+import axios from 'axios';
 
-// Data profil utama
-const name = ref('Raffie Arsy');
-const bio = ref('Saya mahasiswa ilmu komputer UPI yang menyukai hewan kucing. Salam kenal!');
-const photo = ref('../src/assets/img/profil.png');
+// --- STATE DATA ---
+const name = ref('');
+const bio = ref('');
+// Default photo jika user belum punya foto
+const photo = ref(new URL('../assets/img/profil.png', import.meta.url).href);
+const adoptionCount = ref(0);
+const adoptedCats = ref([]);
 
-// Data sementara (modal)
+// State untuk Modal
 const tempName = ref('');
 const tempBio = ref('');
 const tempPhoto = ref('');
 let fileObjectUrl = null;
 
-// Kontrol modal & notifikasi
 const showModal = ref(false);
 const showCopied = ref(false);
 
-// Buka modal edit
+// --- API METHODS ---
+
+// 1. Ambil Data Profil dari Backend
+const fetchUserProfile = async () => {
+  try {
+    const token = localStorage.getItem('token'); // Asumsi token disimpan di localStorage saat login
+    
+    if (!token) {
+      alert("Anda belum login!");
+      // Logic redirect ke login bisa ditambahkan di sini
+      return;
+    }
+
+    const response = await axios.get('http://localhost:3000/api/auth/me', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const userData = response.data;
+
+    // Isi data ke variabel ref
+    name.value = userData.nama;
+    bio.value = userData.bio;
+    if (userData.img_url && userData.img_url !== 'default.png') {
+        // Jika img_url adalah URL lengkap atau path statis
+        photo.value = userData.img_url; 
+    }
+    
+    // Handle Data Kucing
+    adoptedCats.value = userData.adoptedCats || [];
+    adoptionCount.value = adoptedCats.value.length;
+
+  } catch (error) {
+    console.error("Gagal mengambil profil:", error);
+    if (error.response && error.response.status === 401) {
+        alert("Sesi habis, silakan login kembali.");
+    }
+  }
+};
+
+// 2. Simpan Perubahan Profil ke Backend
+const saveProfile = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    await axios.put('http://localhost:3000/api/auth/me', {
+      nama: tempName.value,
+      bio: tempBio.value
+      // Note: Upload gambar memerlukan endpoint upload khusus di backend
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    // Update tampilan lokal setelah sukses
+    name.value = tempName.value;
+    bio.value = tempBio.value;
+    
+    // Jika ada foto baru (logic preview lokal sementara)
+    if (tempPhoto.value !== photo.value) {
+       photo.value = tempPhoto.value; 
+    }
+
+    closeModal();
+    alert("Profil berhasil diperbarui!");
+  } catch (error) {
+    console.error("Gagal update profil:", error);
+    alert("Terjadi kesalahan saat menyimpan profil.");
+  }
+};
+
+// --- MODAL & UTILS ---
+
 const openModal = () => {
   tempName.value = name.value;
   tempBio.value = bio.value;
@@ -87,30 +169,19 @@ const openModal = () => {
   showModal.value = true;
 };
 
-// Tutup modal
 const closeModal = () => {
   showModal.value = false;
 };
 
-// Preview foto baru
 const previewImage = (event) => {
   const file = event.target.files[0];
   if (file) {
-    if (fileObjectUrl) URL.revokeObjectURL(fileObjectUrl); // hapus preview lama
+    if (fileObjectUrl) URL.revokeObjectURL(fileObjectUrl);
     fileObjectUrl = URL.createObjectURL(file);
     tempPhoto.value = fileObjectUrl;
   }
 };
 
-// Simpan perubahan profil
-const saveProfile = () => {
-  name.value = tempName.value;
-  bio.value = tempBio.value;
-  photo.value = tempPhoto.value;
-  closeModal();
-};
-
-// Share profil (copy link)
 const shareProfile = async () => {
   try {
     await navigator.clipboard.writeText(window.location.href);
@@ -120,6 +191,11 @@ const shareProfile = async () => {
     alert('Gagal menyalin link profil.');
   }
 };
+
+// Jalankan fetch saat halaman dimuat
+onMounted(() => {
+  fetchUserProfile();
+});
 </script>
 
 <style scoped>
@@ -355,6 +431,19 @@ const shareProfile = async () => {
   font-size: 14px;
   animation: fadeIn 0.3s ease;
   z-index: 1000;
+}
+
+.cats-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.no-cats {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 15px;
+  text-align: center;
 }
 
 /* Animasi */
