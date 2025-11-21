@@ -6,24 +6,23 @@
           <img src="../assets/img/logo.png" alt="Logo MeowLarat" />
           <h2>MeowLarat</h2>
         </div>
-        <h1>Hello,<br />Welcome Back</h1>
+        <h1>Forgot Password</h1>
 
-        <form class="login-form" @submit.prevent="handleLogin">
-          <input type="text" v-model="username" placeholder="Username" required />
-          <input type="password" v-model="password" placeholder="Password" required />
+        <form class="login-form" @submit.prevent="handleSend">
+          <input type="email" v-model="email" placeholder="Email terdaftar" required />
           
           <div class="options">
-            <label><input type="checkbox" /> Ingat saya</label>
-            <router-link to="/forgot-password">Lupa Password?</router-link>
+            <div></div>
+            <router-link to="/login">Kembali ke Login</router-link>
           </div>
           
           <button type="submit" class="signin-btn" :disabled="isLoading">
-            {{ isLoading ? 'Loading...' : 'Sign In' }}
+            {{ isLoading ? 'Mengirim...' : 'Kirim Link Reset' }}
           </button>
         </form>
 
         <p class="signup-text">
-          Belum punya akun? <router-link to="/daftar">Daftar</router-link>
+          Ingat akunmu? <router-link to="/login">Masuk</router-link>
         </p>
         <router-link to="/" class="back-link">← Beranda</router-link>
       </div>
@@ -42,29 +41,22 @@ import axios from 'axios';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
-const username = ref('');
-const password = ref('');
+const email = ref('');
 const isLoading = ref(false);
 
-const handleLogin = async () => {
+const handleSend = async () => {
   isLoading.value = true;
   try {
-    // Kirim request login
-    const response = await axios.post('http://localhost:3000/api/auth/login', {
-      username: username.value,
-      password: password.value
+    const res = await axios.post('http://localhost:3000/api/auth/forgot-password', {
+      email: email.value
     });
 
-    // Simpan Token dan Info User ke LocalStorage
-    // Ini penting agar user tetap login meski halaman di-refresh
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-
-    alert('Login Berhasil! Selamat datang ' + response.data.user.nama);
-    router.push('/'); // Pindah ke Beranda
-  } catch (error) {
-    console.error(error);
-    alert(error.response?.data?.message || 'Username atau Password salah');
+    alert(res.data?.message || 'Link reset telah dikirim ke email Anda.');
+    // Optional: redirect ke login
+    router.push('/login');
+  } catch (err) {
+    console.error(err);
+    alert(err.response?.data?.message || 'Gagal mengirim email. Cek kembali email.');
   } finally {
     isLoading.value = false;
   }
@@ -72,6 +64,7 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
+/* SALINAN STYLE PERSIS DARI Login.vue agar tampilan identik */
 body {
   background-size: cover;
   background-repeat: repeat;
