@@ -603,7 +603,6 @@ h2 {
   font-size: 1.1rem;
   cursor: pointer;
   text-decoration: underline;
-  /* Hapus margin-top lama jika ada, biar diatur button-group */
   margin-top: 0; 
 }
 
