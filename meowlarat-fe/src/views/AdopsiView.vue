@@ -1,8 +1,9 @@
 <template>
   <div>
-    <Navbar />
-    <div class="adopt-page">
+    <NavbarLogin v-if="isLoggedIn" />
+    <Navbar v-else />
 
+    <div class="adopt-page">
       <section class="hero-adopt" id="default-view">
         <div class="hero-text-container">
           <h1>Adopsi Kebahagiaan Hari Ini</h1>
@@ -28,16 +29,34 @@
 
         <div class="cat-list-wrapper">
           <div class="cat-grid">
-            <div v-for="(cat, index) in availableCats.slice(0, 8)" :key="index" class="cat-card"
-              @click="showCatModal(cat)">
-              <img :src="cat.image" :alt="cat.name" class="cat-image">
-              <p class="cat-name">{{ cat.name }}</p>
+            <div v-for="(cat, index) in displayedCats" :key="index" class="cat-card" @click="showCatModal(cat)">
+              <img :src="cat.img_url" :alt="cat.nama" class="cat-image">
+              <p class="cat-name">{{ cat.nama }}</p>
             </div>
           </div>
-          <button class="more-btn">Lihat lebih banyak</button>
+
+          <div class="button-group">
+            <button 
+              v-if="limit < availableCats.length" 
+              class="more-btn" 
+              @click="loadMore"
+            >
+              Lihat lebih banyak
+            </button>
+
+            <button 
+              v-if="limit > 8" 
+              class="more-btn less-btn" 
+              @click="showLess"
+            >
+              Lihat lebih sedikit
+            </button>
+          </div>
+
+          <p v-if="limit >= availableCats.length" class="all-loaded-text">
+            Semua kucing sudah ditampilkan 😺
+          </p>
         </div>
-
-
       </section>
 
       <hr class="section-divider" />
@@ -76,8 +95,6 @@
           </div>
           <button class="more-btn secondary-more-btn">Lihat Lebih Banyak</button>
         </div>
-
-
       </section>
     </div>
 
@@ -95,46 +112,49 @@
         </div>
         <div class="modal-content">
           <div class="cat-image-detail">
-            <img :src="selectedCat.image || '../assets/img/Hero-adopt.jpg'" :alt="selectedCat.name"
+            <img :src="selectedCat.img_url || '../assets/img/Hero-adopt.jpg'" :alt="selectedCat.name"
               class="cat-detail-img">
           </div>
           <div class="cat-details-text">
-            <p><strong>Nama : </strong>{{ selectedCat.name }}</p>
+            <p><strong>Nama : </strong>{{ selectedCat.nama }}</p>
             <p><strong>Umur : </strong>{{ selectedCat.age }}</p>
             <p><strong>Jenis Kelamin : </strong>{{ selectedCat.gender }}</p>
-            <p><strong>Ras : </strong>{{ selectedCat.breed }}</p>
-            <p><strong>Karakter : </strong>{{ selectedCat.character }}</p>
-            <p><strong>Status vaksinasi : </strong>{{ selectedCat.vaccinationStatus }}</p>
+            <p><strong>Ras : </strong>{{ selectedCat.ras }}</p>
+            <p><strong>Karakter : </strong>{{ selectedCat.karakteristik }}</p>
+            <p><strong>Status vaksinasi : </strong>{{ selectedCat.isVaccinated }}</p>
             <button class="adopt-detail-btn" @click="handleAdoptClick">Adopsi</button>
           </div>
         </div>
-
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import Navbar from '../components/Navbar.vue'
-</script>
-
 <script>
-import Navbar from '../components/Navbar.vue'
-import axios from 'axios'; // Import axios
+import axios from 'axios';
+import Navbar from '../components/Navbar.vue';
+import NavbarLogin from '../components/NavbarLogin.vue';
 
 export default {
   name: 'AdoptView',
-  components: { Navbar }, // Pastikan Navbar didaftarkan jika pakai Options API
+  components: { Navbar, NavbarLogin },
   data() {
     return {
+      isLoggedIn: false,
       isModalOpen: false,
       selectedCat: {},
-      // availableCats sekarang kosong dulu, nanti diisi dari API
-      availableCats: [], 
-      // ... data lain (verificationList, historyList) biarkan dulu
+      availableCats: [],
       verificationList: [],
-      historyList: []
+      historyList: [],
+      // PERUBAHAN 3: Limit awal 8 (4 kolom x 2 baris)
+      limit: 8
     };
+  },
+  computed: {
+    // PERUBAHAN 4: Computed property untuk memotong array
+    displayedCats() {
+      return this.availableCats.slice(0, this.limit);
+    }
   },
   methods: {
     scrollToSection(id) {
@@ -152,39 +172,50 @@ export default {
       this.selectedCat = {};
     },
     handleAdoptClick() {
-      // Cek apakah user sudah login
       const token = localStorage.getItem('token');
       if (!token) {
         alert("Silakan login terlebih dahulu untuk mengadopsi!");
         this.$router.push('/login');
         return;
       }
-      
       alert("Permintaan adopsi telah diterima, silahkan Verifikasi Adopsi!");
       this.closeCatModal();
+      this.$nextTick(() => {
+        this.scrollToSection('list-view');
+      });
     },
-    // Fungsi ambil data kucing
     async fetchCats() {
       try {
         const response = await axios.get('http://localhost:3000/api/cats');
-        // Masukkan data dari backend ke variabel state
         this.availableCats = response.data;
       } catch (error) {
         console.error("Gagal mengambil data kucing:", error);
       }
+    },
+    // PERUBAHAN 5: Fungsi untuk menambah limit (tambah 8 lagi setiap klik)
+    loadMore() {
+      this.limit += 8;
+    },
+    showLess() {
+      this.limit = 8; // Reset limit ke 8
+      // Scroll balik ke atas daftar biar user ga bingung
+      this.$nextTick(() => {
+        this.scrollToSection('adopsi-view');
+      });
     }
   },
-  // Dipanggil otomatis saat halaman dibuka
   mounted() {
+    const token = localStorage.getItem('token');
+    if (token) {
+      this.isLoggedIn = true;
+    }
     this.fetchCats();
   }
 }
 </script>
 
 <style scoped>
-/* =================================================================
-Gaya Umum
-================================================================= */
+/* CSS SAMA SEPERTI SEBELUMNYA, HANYA ADA TAMBAHAN KECIL UNTUK TEKS */
 .adopt-page {
   padding-bottom: 50px;
   color: white;
@@ -197,7 +228,6 @@ h2 {
   color: white;
 }
 
-/* Pemisah antar section */
 .section-divider {
   border: 0;
   height: 10px;
@@ -206,9 +236,6 @@ h2 {
   max-width: 1200px;
 }
 
-/* =================================================================
-1. Gaya Hero/Pilihan Awal (Desktop)
-================================================================= */
 .hero-adopt {
   padding: 80px 100px;
   position: relative;
@@ -254,8 +281,6 @@ h2 {
   justify-content: center;
   gap: 30px;
   z-index: 3;
-
-  /* Posisi absolute untuk DESKTOP */
   position: absolute;
   bottom: 50px;
   left: 50%;
@@ -278,9 +303,6 @@ h2 {
   min-width: 200px;
 }
 
-/* =================================================================
-2. Gaya Daftar Kucing (Cat List) (Desktop)
-================================================================= */
 .cat-list-section {
   max-width: 1200px;
   margin: 50px auto;
@@ -296,6 +318,8 @@ h2 {
   border-radius: 15px;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
   text-align: center;
+  padding-bottom: 30px;
+  /* Tambahan padding bawah */
 }
 
 .cat-list-title {
@@ -324,7 +348,7 @@ h2 {
   overflow: hidden;
   text-align: center;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  height: 250px;
+  height: 290px;
   position: relative;
   cursor: pointer;
 }
@@ -341,16 +365,13 @@ h2 {
   bottom: 0;
   left: 0;
   width: 90%;
-
   background-color: white;
   color: #004c80;
-
   padding: 10px 0;
   margin: 10px;
   font-weight: 600;
   font-size: 1.1em;
   z-index: 10;
-
   border-radius: 30px;
   border: 2px solid #004c80;
 }
@@ -365,9 +386,12 @@ h2 {
   text-decoration: underline;
 }
 
-/* =================================================================
-3. Gaya List Kucing Anda (My List) (Desktop)
-================================================================= */
+.all-loaded-text {
+  color: #888;
+  margin-top: 30px;
+  font-style: italic;
+}
+
 .my-list-section {
   max-width: 1200px;
   margin: 50px auto;
@@ -459,9 +483,6 @@ h2 {
   margin-top: 0;
 }
 
-/* =================================================================
-4. Gaya Modal Informasi Kucing (Desktop)
-================================================================= */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -568,14 +589,37 @@ h2 {
   align-self: center;
 }
 
-/* =================================================================
-RESPONSIVITAS BARU
-================================================================= */
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 40px;
+}
 
-/* TABLET & MOBILE (max-width: 1024px) */
+.more-btn {
+  background: none;
+  border: none;
+  color: #0077c2;
+  font-size: 1.1rem;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: 0; 
+}
+
+.less-btn {
+  color: #888;
+}
+.less-btn:hover {
+  color: #555;
+}
+
+.all-loaded-text {
+  color: #888;
+  margin-top: 20px;
+  font-style: italic;
+}
+
 @media (max-width: 1024px) {
-
-  /* 1. Hero Section */
   .hero-adopt {
     padding: 60px 20px;
     text-align: center;
@@ -597,17 +641,14 @@ RESPONSIVITAS BARU
   }
 
   .cta-button-wrapper {
-
     position: absolute;
     bottom: 50%;
     left: 50%;
     transform: translate(-50%, 50%);
-
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-
     width: 90%;
     gap: 15px;
     z-index: 3;
@@ -627,13 +668,11 @@ RESPONSIVITAS BARU
     order: unset;
   }
 
-  /* 2. Cat List Grid */
   .cat-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 15px;
   }
 
-  /* 3. List Kucing Anda */
   .my-list-title,
   .my-list-description {
     text-align: center;
@@ -647,7 +686,6 @@ RESPONSIVITAS BARU
     padding: 20px;
   }
 
-  /* Status Card (Verifikasi & History) */
   .status-card {
     flex-direction: column;
     align-items: center;
@@ -671,7 +709,6 @@ RESPONSIVITAS BARU
     width: 100%;
   }
 
-  /* 4. Modal Informasi Kucing */
   .cat-info-modal {
     max-width: 95%;
     max-height: 95vh;
@@ -705,10 +742,7 @@ RESPONSIVITAS BARU
   }
 }
 
-/* MOBILE KECIL (max-width: 600px) */
 @media (max-width: 600px) {
-
-  /* Hero */
   .hero-adopt {
     padding: 40px 10px;
   }
@@ -736,7 +770,6 @@ RESPONSIVITAS BARU
     width: 80%;
   }
 
-  /* Cat List Grid */
   .cat-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
@@ -753,7 +786,6 @@ RESPONSIVITAS BARU
     font-size: 0.9em;
   }
 
-  /* List Kucing Anda */
   .sub-section-title {
     font-size: 1.5rem;
   }

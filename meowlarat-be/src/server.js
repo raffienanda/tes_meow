@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import catRoutes from './routes/cats.js';
 import forumRoutes from './routes/forum.js';
+import statsRoutes from './routes/stats.js';
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ fastify.register(jwt, {
 fastify.register(authRoutes, { prefix: '/api/auth' });
 fastify.register(catRoutes, { prefix: '/api/cats' });
 fastify.register(forumRoutes, { prefix: '/api/forum' });
+fastify.register(statsRoutes, { prefix: '/api/stats' });
 
 // Endpoint Cek Server
 fastify.get('/', async (request, reply) => {

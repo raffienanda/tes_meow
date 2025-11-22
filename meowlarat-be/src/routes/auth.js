@@ -86,6 +86,56 @@ async function authRoutes(fastify, options) {
       } 
     };
   });
+
+  fastify.get('/me', {
+    onRequest: [async (request) => await request.jwtVerify()] // Middleware cek token login
+  }, async (request, reply) => {
+    try {
+      const username = request.user.username;
+
+      const user = await prisma.user.findUnique({
+        where: { username: username },
+        include: {
+          adoptedCats: true // Mengambil data relasi kucing yang diadopsi
+        }
+      });
+
+      if (!user) {
+        return reply.code(404).send({ message: 'User tidak ditemukan' });
+      }
+
+      // Hapus password dari response agar aman
+      delete user.password;
+      
+      return user;
+    } catch (error) {
+      return reply.code(500).send({ message: 'Gagal mengambil profil', error: error.message });
+    }
+  });
+
+  // UPDATE PROFIL USER (Nama & Bio)
+  fastify.put('/me', {
+    onRequest: [async (request) => await request.jwtVerify()]
+  }, async (request, reply) => {
+    const { nama, bio } = request.body;
+    const username = request.user.username;
+
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { username: username },
+        data: {
+          nama: nama,
+          bio: bio,
+          // Catatan: Untuk img_url (upload file) memerlukan penanganan khusus (multipart), 
+          // saat ini kita update teks dulu.
+        }
+      });
+
+      return { message: 'Profil berhasil diupdate', user: updatedUser };
+    } catch (error) {
+      return reply.code(500).send({ message: 'Gagal update profil', error: error.message });
+    }
+  });
 }
 
 export default authRoutes;

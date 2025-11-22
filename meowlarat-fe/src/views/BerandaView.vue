@@ -17,21 +17,21 @@
      <div class="stat-item">
       <img src="../assets/img/stats_kucing.png" alt="ikon kucing" >
       <div class="ket-stat">
-        <h2>999</h2>
+        <h2>{{ stats.available }}</h2>
         <p>Kucing Bisa Kamu Adopsi</p>
       </div>
     </div>
     <div class="stat-item">
       <img src="../assets/img/stats_adopsi.png" alt="ikon adopsi" >
       <div class="ket-stat">
-        <h2>999</h2>
+        <h2>{{ stats.adopted }}</h2>
         <p>Kucing Telah Diadopsi</p>
       </div>
     </div>
     <div class="stat-item">
       <img src="../assets/img/stats_shelter.png" alt="ikon shelter" >
       <div class="ket-stat">
-        <h2>999</h2>
+        <h2>{{ stats.shelterCount }}</h2>
         <p>Shelter Telah Bekerjasama</p>
       </div>
     </div>
@@ -39,139 +39,155 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'; // Import ref dan onMounted
+import { ref, onMounted, reactive } from 'vue'; // Import reactive
+import axios from 'axios'; // Import Axios
 import Navbar from '../components/Navbar.vue';
-import NavbarLogin from '../components/NavbarLogin.vue'; // Import NavbarLogin
+import NavbarLogin from '../components/NavbarLogin.vue';
 
 const isLoggedIn = ref(false);
 
+// Variabel untuk menyimpan statistik (Default 0 biar gak kosong pas loading)
+const stats = reactive({
+  available: 0,
+  adopted: 0,
+  shelterCount: 0
+});
+
+// Fungsi ambil data stats dari backend
+const fetchStats = async () => {
+  try {
+    const response = await axios.get('http://localhost:3000/api/stats');
+    stats.available = response.data.available;
+    stats.adopted = response.data.adopted;
+    stats.shelterCount = response.data.shelterCount;
+  } catch (error) {
+    console.error("Gagal mengambil statistik:", error);
+  }
+};
+
 onMounted(() => {
-  // Cek apakah ada token di localStorage saat halaman dimuat
+  // Cek token login
   const token = localStorage.getItem('token');
   if (token) {
     isLoggedIn.value = true;
   }
+
+  // Panggil API stats
+  fetchStats();
 });
 </script>
 
 <style scoped>
+/* Style CSS SAMA PERSIS (Tidak perlu diubah) */
 body {
   margin: 0;
   font-family: 'Poppins', sans-serif;
   background-color: #0077c2;
 }
 
-/* Main-Welcome (hero) Section */
-  .hero {
-    position: relative;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: #fffce8;
-    padding: 69px 100px 180px;
-    border-bottom-left-radius: 0px;
-  }
+.hero {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #fffce8;
+  padding: 69px 100px 180px;
+  border-bottom-left-radius: 0px;
+}
 
-  .hero-image {
-    position: absolute;
-    right: 180px;
-    bottom: -150px;
-  }
+.hero-image {
+  position: absolute;
+  right: 180px;
+  bottom: -150px;
+}
 
-  .hero-image img {
-    width: 290px;
-    height: auto;
-  }
+.hero-image img {
+  width: 290px;
+  height: auto;
+}
 
-  .hero-text{
-    margin-left: 30px;
-    margin-top: 18px;
-  }
+.hero-text{
+  margin-left: 30px;
+  margin-top: 18px;
+}
 
-  .hero-text h1 {
-    font-size: 4.5rem;
-    margin-bottom: -10px;
-  }
+.hero-text h1 {
+  font-size: 4.5rem;
+  margin-bottom: -10px;
+}
 
-  .hero-text p {
-    font-size: 1.3rem;
-    margin-bottom: 20px;
-  }
+.hero-text p {
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+}
 
-  .cta {
-    background-color: #fffce8;
-    color: #005b99;
-    font-weight: bold;
-    border: none;
-    border-radius: 10px;
-    padding: 12px 24px;
-    cursor: pointer;
-    font-size: 20px;
-    text-decoration: none;
-  }
+.cta {
+  background-color: #fffce8;
+  color: #005b99;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  cursor: pointer;
+  font-size: 20px;
+  text-decoration: none;
+}
 
-  .cta:hover {
-    background-color: #f0f0d8;
-  }
+.cta:hover {
+  background-color: #f0f0d8;
+}
 
-  /* Stats Section */
-  .stats {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 180px;
-    background-color: #ffffe7;
-    color: #005b99;
-    padding: 70px 0;
-    font-weight: bold;
+/* Stats Section */
+.stats {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 180px;
+  background-color: #ffffe7;
+  color: #005b99;
+  padding: 70px 0;
+  font-weight: bold;
 
-    position: relative;
-    margin-top: 100px;
-    z-index: 2;
-    
-  }
+  position: relative;
+  margin-top: 100px;
+  z-index: 2;
+}
 
-  .stats::before {
-    content: "";
-    position: absolute;
-    top: -10px;
-    left: 0;
-    width: 100%;
-    height: 250px;
-    background-color: #ffffe7;
-    transform: skewY(-2deg);
-    transform-origin: top left;
-    z-index: -1;
-  }
+.stats::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 0;
+  width: 100%;
+  height: 250px;
+  background-color: #ffffe7;
+  transform: skewY(-2deg);
+  transform-origin: top left;
+  z-index: -1;
+}
 
-  .stat-item {
-    display: flex;
-    text-align: center;
-    z-index: 3;
-  }
+.stat-item {
+  display: flex;
+  text-align: center;
+  z-index: 3;
+}
 
-  .ket-stat {
-    text-align: left;
-    margin-left: 20px;
-  }
+.ket-stat {
+  text-align: left;
+  margin-left: 20px;
+}
 
-  .ket-stat h2 {
-    font-size: 3.5rem;
-    margin: 0;
-  }
+.ket-stat h2 {
+  font-size: 3.5rem;
+  margin: 0;
+}
 
-  .ket-stat p {
-    font-size: 1.2rem;
-    margin: 0;
-  }
+.ket-stat p {
+  font-size: 1.2rem;
+  margin: 0;
+}
 
-  .icon {
-    font-size: 2rem;
-    display: block;
-    margin-bottom: 10px;
-  }
-
-  /* RESPONSIVE FIXES */
+/* RESPONSIVE FIXES */
 @media (max-width: 900px) {
   .hero {
     flex-direction: column;
