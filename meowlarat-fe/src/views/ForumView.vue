@@ -1,20 +1,12 @@
 <template>
   <div class="forum-page-wrapper">
-
     <Navbar /> 
 
     <main class="forum-layout-container">
-
       <aside class="forum-sidebar">
         <div class="sidebar-header-mobile">
           <button class="mobile-menu-toggle" @click="toggleSidebar">
-            <svg v-if="!isSidebarOpen" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-              <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
-            </svg>
-            <svg v-else viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
-            <span>Kategori</span>
+            <span>{{ isSidebarOpen ? 'Tutup Kategori' : 'Pilih Kategori' }}</span>
           </button>
         </div>
         
@@ -25,7 +17,9 @@
               :key="item.path" 
               :class="{ 'active': $route.path === item.path }"
             >
-              <router-link :to="item.path" @click="closeSidebarOnMobile">{{ item.name }}</router-link>
+              <router-link :to="item.path" @click="closeSidebarOnMobile">
+                {{ item.name }}
+              </router-link>
             </li>
           </ul>
         </nav>
@@ -34,35 +28,36 @@
       <section class="forum-main-content">
         <h1 class="main-title">{{ activeCategoryTitle }}</h1>
 
-        <div class="topic-list">
+        <div v-if="isLoading" class="loading-state">Memuat diskusi...</div>
+        <div v-else-if="errorMessage" class="error-state">{{ errorMessage }}</div>
+
+        <div v-else class="topic-list">
           <div 
-            v-for="(topic, index) in activeTopics" 
-            :key="index" 
+            v-for="topic in topics" 
+            :key="topic.id" 
             class="discussion-card"
             @click="openTopicDetail(topic)" 
           >
             <h2>{{ topic.title }}</h2>
+            
             <div class="topic-meta">
-              <span>{{ topic.author }}</span>
-              <span class="meta-dot"> • </span>
-              <span class="time-ago">{{ topic.time }}</span>
+              <span class="author-name">Oleh: {{ topic.user ? topic.user.nama : 'Anonim' }}</span>
             </div>
-            <p class="topic-excerpt">"{{ topic.excerpt }}"</p>
-            <button class="response-btn">Add response</button> 
+            
+            <p class="topic-excerpt">"{{ truncateText(topic.teks) }}"</p>
+            <button class="response-btn">Lihat Detail</button> 
           </div>
           
-          <div v-if="activeTopics.length === 0" class="no-topic-message">
+          <div v-if="topics.length === 0" class="no-topic-message">
             Belum ada topik diskusi di kategori ini. Jadilah yang pertama memulai!
           </div>
-
         </div>
         
         <button class="add-topic-btn" @click="openNewTopicModal">+</button>
-        
       </section>
     </main>
 
-        <div v-if="showNewTopicModal" class="modal-overlay" @click.self="closeNewTopicModal">
+    <div v-if="showNewTopicModal" class="modal-overlay" @click.self="closeNewTopicModal">
       <div class="modal-container">
         <div class="modal-header">
           <h2>Buat Topik Baru</h2>
@@ -70,69 +65,36 @@
         </div>
         <form @submit.prevent="submitNewTopic">
           <div class="form-group">
-            <label for="forum-type">Jenis Forum</label>
-            <select id="forum-type" v-model="newTopic.forum_type" required>
-              <option value="" disabled>Pilih Kategori</option>
-              <option 
-                v-for="item in sidebarItems" 
-                :key="item.path" 
-                :value="item.name"
-              >
-                {{ item.name }}
-              </option>
-            </select>
+            <label>Kategori</label>
+            <input type="text" :value="activeCategoryTitle" disabled class="disabled-input">
           </div>
           <div class="form-group">
-            <label for="title">Judul Topik</label>
-            <input 
-              type="text" 
-              id="title" 
-              v-model="newTopic.title" 
-              placeholder="Contoh: Kucing saya tidak mau makan" 
-              required
-            >
+            <label>Judul Topik</label>
+            <input v-model="newTopic.title" type="text" placeholder="Contoh: Kucing saya tidak mau makan" required>
           </div>
           <div class="form-group">
-            <label for="description">Deskripsi Lengkap</label>
-            <textarea 
-              id="description" 
-              v-model="newTopic.excerpt" 
-              rows="4" 
-              placeholder="Jelaskan masalah, pertanyaan, atau topik diskusi Anda secara detail..." 
-              required
-            ></textarea>
+            <label>Isi Diskusi</label>
+            <textarea v-model="newTopic.teks" rows="4" placeholder="Jelaskan detailnya..." required></textarea>
           </div>
           <div class="modal-footer">
-            <button type="submit" class="submit-modal-btn">Submit</button>
+            <button type="submit" class="submit-modal-btn" :disabled="isSubmitting">
+              {{ isSubmitting ? 'Mengirim...' : 'Kirim' }}
+            </button>
           </div>
         </form>
       </div>
     </div>
 
-        <div v-if="showDetailModal" class="modal-overlay" @click.self="closeDetailModal">
+    <div v-if="showDetailModal" class="modal-overlay" @click.self="closeDetailModal">
       <div class="modal-container detail-modal">
         <div class="modal-header">
           <h2>{{ selectedTopic.title }}</h2>
           <button class="close-btn" @click="closeDetailModal">&times;</button>
         </div>
         <div class="topic-detail-content">
-          <p class="detail-meta">
-            Oleh <strong>{{ selectedTopic.author }}</strong> • {{ selectedTopic.time }}
-          </p>
-          <p class="detail-excerpt">
-            {{ selectedTopic.excerpt }}
-            <br><br>
-          </p>
+          <p class="detail-meta">Penulis: <strong>{{ selectedTopic.user?.nama }}</strong></p>
           <hr>
-          <h3 class="replies-title">Balasan (1)</h3>
-          <div class="reply-card">
-              <p><strong>Bambang S:</strong> Wah, kasusnya mirip kucing saya. Coba ganti jenis mangkuk makannya, kadang itu membantu!</p>
-              <span class="reply-time">1 mnt lalu</span>
-          </div>
-          <div class="form-group add-reply">
-              <textarea placeholder="Tulis balasan Anda di sini..." rows="2"></textarea>
-              <button class="submit-modal-btn small-btn">Kirim Balasan</button>
-          </div>
+          <p class="detail-excerpt">{{ selectedTopic.teks }}</p>
         </div>
       </div>
     </div>
@@ -140,98 +102,103 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import axios from 'axios';
 import Navbar from '../components/Navbar.vue'; 
 
 const route = useRoute();
 
-// =================================================================
-// 📌 LOGIKA RESPONSIVITAS MOBILE BARU
-// =================================================================
-const isSidebarOpen = ref(false); 
+// STATE
+const topics = ref([]);
+const isLoading = ref(false);
+const errorMessage = ref('');
+const isSubmitting = ref(false);
+const showNewTopicModal = ref(false);
+const showDetailModal = ref(false);
+const selectedTopic = ref({});
+// ⚠️ PERUBAHAN: Object pakai properti 'title'
+const newTopic = ref({ title: '', teks: '' });
+const isSidebarOpen = ref(false);
 
-const toggleSidebar = () => {
-isSidebarOpen.value = !isSidebarOpen.value;
-};
-
-const closeSidebarOnMobile = () => {
-// Tutup sidebar hanya jika lebar layar di bawah 992px (lebar tablet/mobile)
-if (window.innerWidth <= 992) { 
- isSidebarOpen.value = false;
-}
-};
-// =================================================================
-
-// DUMMY DATA (TIDAK BERUBAH)
 const sidebarItems = ref([
-{ name: 'Lost & Found Cats', path: '/forum/lost-found' },
-{ name: 'Adoption Stories', path: '/forum/stories' },
-{ name: 'Cat Health & Care', path: '/forum/health' },
-{ name: 'Food & Nutrition', path: '/forum/nutrition' }, 
-{ name: 'Rescue & Volunteering', path: '/forum/rescue' },
+  { name: 'Lost & Found Cats', path: '/forum/lost-found', dbCategory: 'lost-found' },
+  { name: 'Adoption Stories', path: '/forum/stories', dbCategory: 'stories' },
+  { name: 'Cat Health & Care', path: '/forum/health', dbCategory: 'health' },
+  { name: 'Food & Nutrition', path: '/forum/nutrition', dbCategory: 'nutrition' }, 
+  { name: 'Rescue & Volunteering', path: '/forum/rescue', dbCategory: 'rescue' },
 ]);
 
-const allDummyTopics = {
-'/forum/nutrition': [
- { title: 'Makanan kering vs basah, mana lebih baik?', author: 'Andi P', time: '5 mnt yang lalu', excerpt: 'Halo semuanya, aku masih bingung mau kasih makanan kering atau basah untuk kucingku. Ada yang bisa jelasin kelebihan dan kekurangannya?' },
- { title: 'Resep makanan rumahan untuk kucing', author: 'Rina M', time: '2 jam lalu', excerpt: 'Ada yang pernah bikin makanan kucing sendiri di rumah? Aku ingin coba buat yang sehat dan aman, biar nggak terus beli makanan kemasan.' }
-],
-'/forum/lost-found': [
- { title: 'Kucing Oren hilang di daerah Bandung', author: 'Budi H', time: '1 hari yang lalu', excerpt: 'Kucing saya warna oren dengan kalung biru hilang sejak kemarin. Mohon bantuannya.' },
-],
-'/forum/stories': [
- { title: 'Akhirnya Meong menemukan rumah permanen!', author: 'Lisa D', time: '2 hari yang lalu', excerpt: 'Setelah 6 bulan menunggu, Meong diadopsi oleh keluarga yang sangat menyayanginya! Terimakasih Meowlarat!' }
-],
-'/forum/health': [
- { title: 'Tips Pertolongan Pertama untuk Kucing Muntah', author: 'Dr. Hewan', time: '1 minggu lalu', excerpt: 'Muntah adalah hal umum, tapi kapan kita harus panik? Berikut tips pertolongan pertama...' }
-],
-'/forum/rescue': [
- { title: 'Butuh relawan untuk memberi makan kucing liar di Jakarta Timur', author: 'Komunitas CatCare', time: '4 jam lalu', excerpt: 'Kami membutuhkan 3 relawan lagi untuk membantu feeding day besok pagi.' }
-],
-};
-
-
-// LOGIKA MODAL (TIDAK BERUBAH)
-const showNewTopicModal = ref(false);
-const openNewTopicModal = () => { showNewTopicModal.value = true; };
-const closeNewTopicModal = () => { 
-showNewTopicModal.value = false;
-newTopic.value = { forum_type: '', title: '', excerpt: '', author: 'Pengguna Baru', time: 'Baru saja' };
-};
-const newTopic = ref({ forum_type: '', title: '', excerpt: '', author: 'Pengguna Baru', time: 'Baru saja', });
-const submitNewTopic = () => {
-const selectedItem = sidebarItems.value.find(item => item.name === newTopic.value.forum_type);
-const targetPath = selectedItem ? selectedItem.path : '/forum/nutrition'; 
-
-if (allDummyTopics[targetPath]) {
- allDummyTopics[targetPath].unshift({ title: newTopic.value.title, author: newTopic.value.author, time: newTopic.value.time, excerpt: newTopic.value.excerpt, });
- alert(`Topik baru berhasil ditambahkan ke kategori ${newTopic.value.forum_type}!`);
-} else {
- alert('Gagal menemukan kategori tujuan.');
-}
-closeNewTopicModal();
-};
-const showDetailModal = ref(false);
-const selectedTopic = ref({}); 
-const openTopicDetail = (topic) => {
-selectedTopic.value = topic; 
-showDetailModal.value = true; 
-};
-const closeDetailModal = () => {
-showDetailModal.value = false;
-selectedTopic.value = {}; 
-};
-
-// LOGIKA KOMPUTASI (TIDAK BERUBAH)
-const activeTopics = computed(() => {
-return allDummyTopics[route.path] || []; 
-});
-
 const activeCategoryTitle = computed(() => {
- const activeItem = sidebarItems.value.find(item => item.path === route.path);
- return activeItem ? activeItem.name : 'Forum Diskusi';
+  const item = sidebarItems.value.find(i => i.path === route.path);
+  return item ? item.name : 'Forum Diskusi';
 });
+
+const currentDbCategory = computed(() => {
+  const item = sidebarItems.value.find(i => i.path === route.path);
+  return item ? item.dbCategory : 'general';
+});
+
+// FETCH DATA
+const fetchThreads = async () => {
+  isLoading.value = true;
+  errorMessage.value = '';
+  topics.value = [];
+  try {
+    const response = await axios.get(`http://localhost:3000/api/forum`, {
+      params: { category: currentDbCategory.value }
+    });
+    topics.value = response.data;
+  } catch (error) {
+    console.error(error);
+    errorMessage.value = 'Gagal memuat data. Pastikan server backend menyala.';
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+onMounted(fetchThreads);
+watch(() => route.path, fetchThreads);
+
+const truncateText = (text) => text && text.length > 100 ? text.substring(0, 100) + '...' : text;
+const toggleSidebar = () => { isSidebarOpen.value = !isSidebarOpen.value; };
+const closeSidebarOnMobile = () => { if (window.innerWidth <= 992) isSidebarOpen.value = false; };
+const openNewTopicModal = () => { showNewTopicModal.value = true; };
+
+const closeNewTopicModal = () => { 
+  showNewTopicModal.value = false; 
+  newTopic.value = { title: '', teks: '' }; // Reset form
+};
+
+const submitNewTopic = async () => {
+  isSubmitting.value = true;
+  try {
+    const token = localStorage.getItem('token'); 
+    if (!token) { alert("Silakan login terlebih dahulu!"); return; }
+
+    // ⚠️ PERUBAHAN: Kirim payload 'title'
+    await axios.post('http://localhost:3000/api/forum', {
+      title: newTopic.value.title,
+      category: currentDbCategory.value,
+      teks: newTopic.value.teks
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    alert('Topik berhasil dibuat!');
+    closeNewTopicModal();
+    fetchThreads(); 
+  } catch (error) {
+    console.error(error);
+    alert('Gagal membuat topik. Pastikan Anda sudah login.');
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+const openTopicDetail = (topic) => { selectedTopic.value = topic; showDetailModal.value = true; };
+const closeDetailModal = () => { showDetailModal.value = false; };
+
 </script>
 
 <style scoped>
@@ -270,7 +237,6 @@ border-top-right-radius: 0;
 border-bottom-right-radius: 0;
 }
 
-/* Sembunyikan header mobile di desktop */
 .sidebar-header-mobile {
 display: none;
 }
@@ -333,6 +299,13 @@ cursor: pointer;
  font-size: 0.9em;
  color: #666;
  margin-bottom: 10px;
+ display: flex;
+ gap: 10px;
+}
+
+.author-name {
+  font-weight: 600;
+  color: #0077c2;
 }
 
 .topic-excerpt {
@@ -375,7 +348,7 @@ padding-bottom: 5px;
 }
 
 /* =================================================================
-✅ GAYA MODAL UMUM (DIKEMBALIKAN)
+GAYA MODAL UMUM
 ================================================================= */
 .modal-overlay {
 position: fixed;
@@ -443,6 +416,11 @@ input[type="text"], select, textarea {
     font-family: inherit;
 }
 
+.disabled-input {
+    background-color: #e9ecef;
+    color: #6c757d;
+}
+
 .modal-footer {
     text-align: right;
     padding-top: 15px;
@@ -458,10 +436,13 @@ cursor: pointer;
 font-size: 1em;
 font-weight: 600;
 }
-
+.submit-modal-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
 
 /* =================================================================
-✅ GAYA MODAL DETAIL KHUSUS (DIKEMBALIKAN)
+GAYA MODAL DETAIL
 ================================================================= */
 .topic-detail-content {
   padding-top: 10px;
@@ -477,65 +458,13 @@ font-weight: 600;
   font-size: 1.1em;
   line-height: 1.6;
   margin-bottom: 30px;
+  white-space: pre-wrap; /* Agar enter di textarea terbaca */
 }
-
-hr {
-  border: 0;
-  border-top: 1px solid #ddd;
-  margin: 25px 0;
-}
-
-.replies-title {
-  color: #0077c2;
-  font-size: 1.2rem;
-  margin-bottom: 15px;
-}
-
-.reply-card {
-  background-color: #f0f8ff;
-  padding: 15px;
-  border-radius: 8px;
-  border-left: 3px solid #0077c2;
-  margin-bottom: 15px;
-}
-
-.reply-card p {
-  margin: 0 0 5px 0;
-  line-height: 1.4;
-}
-
-.reply-time {
-  font-size: 0.8em;
-  color: #999;
-  display: block;
-  text-align: right;
-}
-
-.add-reply {
-  display: flex;
-  gap: 10px;
-  align-items: flex-end;
-  margin-top: 30px;
-}
-
-.add-reply textarea {
-  flex-grow: 1;
-  resize: vertical;
-}
-
-.small-btn {
-  padding: 8px 15px;
-  white-space: nowrap;
-}
-
 
 /* =================================================================
 RESPONSIVITAS
 ================================================================= */
-
-/* TABLET & MOBILE (max-width: 992px) */
 @media (max-width: 992px) {
-  /* Ubah layout dari row (samping) menjadi column (atas-bawah) */
 .forum-layout-container {
    flex-direction: column; 
    padding: 15px;
@@ -545,11 +474,10 @@ RESPONSIVITAS
     box-sizing: border-box;
  }
 
-/* Sidebar container: Ambil lebar penuh */
 .forum-sidebar {
    max-width: 100%;
-   min-width: unset; /* ❗ PERBAIKAN: Hapus min-width desktop */
-   width: 100%; /* ❗ PERBAIKAN: Tambahkan width 100% eksplisit */
+   min-width: unset; 
+   width: 100%; 
    padding: 10px 15px; 
    border-radius: 15px; 
    margin-bottom: 20px;
@@ -558,7 +486,6 @@ RESPONSIVITAS
     box-sizing: border-box;
  }
 
-/* Tampilkan header mobile (tombol Kategori) */
 .sidebar-header-mobile {
  display: block;
  padding: 5px 0; 
@@ -580,31 +507,24 @@ RESPONSIVITAS
  justify-content: center; 
 }
 
-/* Sembunyikan nav menu secara default di mobile */
 .forum-sidebar nav.mobile-hidden {
  display: none;
 }
 
-/* Tampilkan nav menu saat isSidebarOpen=true */
 .forum-sidebar nav {
  display: block; 
-}
-  
-  /* Hilangkan margin dan padding yang mengganggu full width */
-.forum-sidebar nav {
  padding: 10px 0;
  border-top: 1px solid #0077c2;
  margin-top: 10px;
 }
 
-/* Konten Utama: Ambil lebar penuh, tanpa margin kiri */
 .forum-main-content {
    flex-grow: 1;
-   width: 100%; /* ❗ PERBAIKAN: Tambahkan width 100% eksplisit */
+   width: 100%; 
    padding: 20px;
    min-height: unset;
    border-radius: 15px; 
-    box-sizing: border-box; /* ❗ PENTING: Pastikan padding tidak menambah lebar */
+    box-sizing: border-box; 
  }
 .add-topic-btn {
  width: 50px;
@@ -614,53 +534,20 @@ RESPONSIVITAS
 }
 }
 
-/* MOBILE KECIL (max-width: 600px) */
 @media (max-width: 600px) {
-.forum-layout-container {
- padding: 10px;
-}
-
-.forum-main-content {
- padding: 15px;
-}
-
-.main-title {
- font-size: 1.8rem;
- margin-bottom: 20px;
-}
-
-/* Modal di layar kecil */
+.forum-layout-container { padding: 10px; }
+.forum-main-content { padding: 15px; }
+.main-title { font-size: 1.8rem; margin-bottom: 20px; }
 .modal-container {
     width: calc(100% - 20px); 
     margin: 10px;
     padding: 20px;
-    
-    /* ❗ PERBAIKAN UTAMA: Batasi tinggi dan aktifkan scroll pada container detail modal */
-    max-height: 90vh; /* Batasi tinggi modal hingga 90% dari tinggi viewport */
-    overflow-y: auto; /* Aktifkan scroll vertikal jika konten melebihi max-height */
-    
-    /* Pastikan detail modal tidak terganggu oleh margin atas/bawah */
+    max-height: 90vh; 
+    overflow-y: auto; 
     display: flex;
     flex-direction: column; 
   }
-
-.modal-header h2 {
- font-size: 1.5rem;
-}
-
-.submit-modal-btn {
- width: 100%;
- padding: 12px;
-}
-
-.add-reply {
- flex-direction: column; 
- gap: 5px;
- align-items: stretch;
-}
-
-.small-btn {
- width: 100%; 
-}
+.modal-header h2 { font-size: 1.5rem; }
+.submit-modal-btn { width: 100%; padding: 12px; }
 }
 </style>

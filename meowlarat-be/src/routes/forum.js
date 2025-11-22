@@ -4,37 +4,51 @@ const prisma = new PrismaClient();
 
 async function forumRoutes(fastify, options) {
 
-  // GET THREADS (Bisa filter by category)
+  // GET THREADS (Ambil Data)
   fastify.get('/', async (request, reply) => {
-    const { category } = request.query;
-    const whereClause = category ? { category: category } : {};
+    try {
+      const { category } = request.query;
+      console.log(`📥 Request Forum Kategori: ${category || 'Semua'}`);
 
-    const threads = await prisma.thread.findMany({
-      where: whereClause,
-      include: {
-        user: { select: { nama: true, img_url: true } } // Ambil info pembuat thread
-      }
-    });
-    return threads;
+      const whereClause = category ? { category: category } : {};
+
+      const threads = await prisma.thread.findMany({
+        where: whereClause,
+        include: {
+          user: { select: { nama: true, img_url: true } }
+        }
+      });
+      
+      return threads;
+    } catch (error) {
+      console.error("❌ ERROR GET FORUM:", error);
+      reply.code(500).send(error);
+    }
   });
 
-  // BUAT THREAD BARU (Perlu Login -> Pakai JWT)
+  // BUAT THREAD BARU (POST)
   fastify.post('/', {
-    onRequest: [async (request) => await request.jwtVerify()] // Middleware Cek Login
+    onRequest: [async (request) => await request.jwtVerify()]
   }, async (request, reply) => {
-    const { nama, category, teks } = request.body;
-    const username = request.user.username; // Didapat dari token login
+    try {
+      // ⚠️ PERUBAHAN DI SINI: Gunakan 'title' bukan 'nama'
+      const { title, category, teks } = request.body; 
+      const username = request.user.username;
 
-    const newThread = await prisma.thread.create({
-      data: {
-        nama,      // Judul
-        category,
-        teks,      // Isi
-        username   // Foreign Key ke User
-      }
-    });
+      const newThread = await prisma.thread.create({
+        data: {
+          title,     // Sesuai kolom database kamu
+          category,
+          teks,
+          username
+        }
+      });
 
-    return newThread;
+      return newThread;
+    } catch (error) {
+      console.error("❌ ERROR POST FORUM:", error);
+      reply.code(500).send(error);
+    }
   });
 }
 

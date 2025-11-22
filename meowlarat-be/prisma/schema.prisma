@@ -29,7 +29,7 @@ model User {
 
 model Thread {
   id       Int    @id @default(autoincrement())
-  nama     String @db.VarChar(255) // Judul Thread
+  title     String @db.VarChar(255) // Judul Thread
   category String @db.VarChar(255)
   teks     String @db.Text
   username String @db.VarChar(255)
