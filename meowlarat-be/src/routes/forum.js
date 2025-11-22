@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function forumRoutes(fastify, options) {
 
-  // GET THREADS (Ambil Data)
+  // 1. AMBIL DAFTAR TOPIK (GET /)
   fastify.get('/', async (request, reply) => {
     try {
       const { category } = request.query;
@@ -16,7 +16,8 @@ async function forumRoutes(fastify, options) {
         where: whereClause,
         include: {
           user: { select: { nama: true, img_url: true } }
-        }
+        },
+        orderBy: { id: 'desc' } // Urutkan dari yang terbaru
       });
       
       return threads;
@@ -26,18 +27,17 @@ async function forumRoutes(fastify, options) {
     }
   });
 
-  // BUAT THREAD BARU (POST)
+  // 2. BUAT TOPIK BARU (POST /)
   fastify.post('/', {
     onRequest: [async (request) => await request.jwtVerify()]
   }, async (request, reply) => {
     try {
-      // ⚠️ PERUBAHAN DI SINI: Gunakan 'title' bukan 'nama'
       const { title, category, teks } = request.body; 
       const username = request.user.username;
 
       const newThread = await prisma.thread.create({
         data: {
-          title,     // Sesuai kolom database kamu
+          title,
           category,
           teks,
           username
@@ -47,6 +47,62 @@ async function forumRoutes(fastify, options) {
       return newThread;
     } catch (error) {
       console.error("❌ ERROR POST FORUM:", error);
+      reply.code(500).send(error);
+    }
+  });
+
+  // 3. LIHAT DETAIL TOPIK & KOMENTAR (GET /:id)
+  fastify.get('/:id', async (request, reply) => {
+    try {
+      const { id } = request.params;
+      
+      const thread = await prisma.thread.findUnique({
+        where: { id: Number(id) },
+        include: {
+          user: { select: { nama: true, img_url: true } },
+          posts: { // Ambil komentar (posts) yang terhubung
+            include: {
+              user: { select: { nama: true, img_url: true } }
+            },
+            orderBy: { id: 'asc' } // Komentar lama di atas
+          }
+        }
+      });
+
+      if (!thread) {
+        return reply.code(404).send({ error: "Topik tidak ditemukan" });
+      }
+      
+      return thread;
+    } catch (error) {
+      console.error("❌ ERROR GET DETAIL THREAD:", error);
+      reply.code(500).send(error);
+    }
+  });
+
+  // 4. KIRIM KOMENTAR BARU (POST /:id/posts)
+  fastify.post('/:id/posts', {
+    onRequest: [async (request) => await request.jwtVerify()]
+  }, async (request, reply) => {
+    try {
+      const { id } = request.params; // ID Thread dari URL
+      const { teks } = request.body;
+      const username = request.user.username;
+
+      const newPost = await prisma.post.create({
+        data: {
+          teks,
+          id_thread: Number(id), // Hubungkan komentar ke thread ini
+          username
+        },
+        include: {
+          user: { select: { nama: true, img_url: true } } // Return data user agar tampilan langsung update
+        }
+      });
+
+      return newPost;
+    } catch (error) {
+      console.error("❌ ERROR POST COMMENT:", error);
       reply.code(500).send(error);
     }
   });
