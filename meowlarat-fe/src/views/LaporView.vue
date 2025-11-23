@@ -76,8 +76,9 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue';
+import { reactive, ref } from 'vue';
 import Navbar from '../components/Navbar.vue'; 
+import axios from 'axios';
 
 const reportTypes = [
   'kucing hilang', 
@@ -94,6 +95,8 @@ const reportData = reactive({
   catatan_tambahan: ''
 });
 
+const isSubmitting = ref(false);
+
 function handleFileUpload(event) {
   const file = event.target.files[0];
   if (file) {
@@ -101,9 +104,49 @@ function handleFileUpload(event) {
   }
 }
 
-function submitReport() {
-  console.log('Data yang dikirim:', reportData);
-  alert('Laporan berhasil dikirim! (Simulasi)');
+async function submitReport() {
+  if (!reportData.lokasi_kucing || !reportData.deskripsi_singkat) {
+    alert('Mohon lengkapi Lokasi dan Deskripsi singkat.');
+    return;
+  }
+
+  isSubmitting.value = true;
+
+  // --- PENTING: Gunakan FormData untuk kirim file ---
+  const formData = new FormData();
+  formData.append('jenis_laporan', reportData.jenis_laporan);
+  formData.append('lokasi_kucing', reportData.lokasi_kucing);
+  formData.append('deskripsi_singkat', reportData.deskripsi_singkat);
+  formData.append('catatan_tambahan', reportData.catatan_tambahan);
+  
+  if (reportData.foto_file) {
+    formData.append('foto', reportData.foto_file);
+  }
+
+  try {
+    // Kirim ke Backend
+    const response = await axios.post('http://localhost:3000/api/lapor', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data' // Header wajib untuk upload file
+      }
+    });
+
+    console.log('Sukses:', response.data);
+    alert('Laporan berhasil dikirim!');
+    
+    // Reset Form
+    reportData.lokasi_kucing = '';
+    reportData.deskripsi_singkat = '';
+    reportData.catatan_tambahan = '';
+    reportData.foto_file = null;
+    document.getElementById('upload_foto').value = ''; // Reset input file HTML
+
+  } catch (error) {
+    console.error('Gagal mengirim laporan:', error);
+    alert('Gagal mengirim laporan. Pastikan backend berjalan.');
+  } finally {
+    isSubmitting.value = false;
+  }
 }
 </script>
 
