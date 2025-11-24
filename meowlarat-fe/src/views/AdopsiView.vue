@@ -7,25 +7,22 @@
       <section class="hero-adopt" id="default-view">
         <div class="hero-text-container">
           <h1>Adopsi Kebahagiaan Hari Ini</h1>
-          <p>Banyak kucing lucu dan menggemaskan menunggu keluarga baru. Mulailah proses adopsi dan temukan sahabat
-            terbaik Anda di sini.</p>
+          <p>Banyak kucing lucu dan menggemaskan menunggu keluarga baru. Mulailah proses adopsi dan temukan sahabat terbaik Anda di sini.</p>
         </div>
-
         <div class="cta-container">
           <div class="cta-button-wrapper">
             <button class="cta-adopt-btn" @click="scrollToSection('adopsi-view')">Adopsi</button>
             <button class="cta-list-btn" @click="scrollToSection('list-view')">List Adopsi Saya</button>
           </div>
-          <img src="../assets/img/Hero-adopt.jpg" alt="Kucing melihat ke atas tombol adopsi" class="hero-cat-image">
+          <img src="../assets/img/Hero-adopt.jpg" alt="Kucing melihat ke atas" class="hero-cat-image">
         </div>
       </section>
 
       <hr class="section-divider" />
 
       <section class="cat-list-section" id="adopsi-view">
-        <h1 class="cat-list-title">Kucing Menunggu Kamu</h1>
-        <p class="cat-list-description">Lihat daftar kucing yang siap diadopsi. Setiap kucing punya cerita unik dan
-          kesempatan untuk menemukan rumah penuh kasih.</p>
+         <h1 class="cat-list-title">Kucing Menunggu Kamu</h1>
+        <p class="cat-list-description">Lihat daftar kucing yang siap diadopsi...</p>
 
         <div class="cat-list-wrapper">
           <div class="cat-grid">
@@ -34,20 +31,10 @@
               <p class="cat-name">{{ cat.nama }}</p>
             </div>
           </div>
-
-          <div class="button-group">
-            <button v-if="limit < availableCats.length" class="more-btn" @click="loadMore">
-              Lihat lebih banyak
-            </button>
-
-            <button v-if="limit > 8" class="more-btn less-btn" @click="showLess">
-              Lihat lebih sedikit
-            </button>
+           <div class="button-group">
+            <button v-if="limit < availableCats.length" class="more-btn" @click="loadMore">Lihat lebih banyak</button>
+            <button v-if="limit > 8" class="more-btn less-btn" @click="showLess">Lihat lebih sedikit</button>
           </div>
-
-          <p v-if="limit >= availableCats.length" class="all-loaded-text">
-            Semua kucing sudah ditampilkan 😺
-          </p>
         </div>
       </section>
 
@@ -55,21 +42,35 @@
 
       <section class="my-list-section" id="list-view">
         <h1 class="my-list-title">List Kucing Anda</h1>
-        <p class="my-list-description">Di sini kamu bisa melihat status permintaan adopsi serta daftar kucing yang sudah
-          berhasil kamu adopsi.</p>
+        <p class="my-list-description">Di sini kamu bisa melihat status permintaan adopsi serta daftar kucing yang sudah berhasil kamu adopsi.</p>
 
         <div class="list-card-wrapper">
-          <h2 class="sub-section-title">Verifikasi Adopsi</h2>
+          <h2 class="sub-section-title">Status Adopsi</h2>
+          
+          <div v-if="verificationList.length === 0" class="empty-state">
+            <p>Belum ada permintaan adopsi.</p>
+          </div>
+
           <div v-for="(verif, index) in verificationList" :key="'verif-' + index" class="status-card">
             <img :src="verif.image" :alt="verif.name" class="status-cat-image">
             <div class="status-details">
               <p>Nama : {{ verif.name }}</p>
               <p>Umur : {{ verif.age }}</p>
+              
               <p>Tanggal Adopsi : {{ verif.dob }}</p>
-              <p class="status-text">Status : {{ verif.status }}</p>
+              
+              <div v-if="verif.isReadyToTake">
+                <p class="status-text success">Disetujui Admin! Silakan ambil kucingmu.</p>
+                <button class="ambil-btn" @click="handleTakeCat(verif.id, verif.name)">
+                  Ambil Kucing
+                </button>
+              </div>
+              <div v-else>
+                <p class="status-text pending">Status : Menunggu Verifikasi</p>
+              </div>
+
             </div>
           </div>
-          <button class="more-btn secondary-more-btn">Lihat Lebih Banyak</button>
         </div>
 
         <div class="list-card-wrapper">
@@ -84,7 +85,6 @@
               <router-link to="/form" class="form-btn">Form</router-link>
             </div>
           </div>
-          <button class="more-btn secondary-more-btn">Lihat Lebih Banyak</button>
         </div>
       </section>
     </div>
@@ -93,13 +93,7 @@
       <div class="cat-info-modal">
         <div class="modal-header">
           <h2>Informasi Kucing</h2>
-          <button class="close-btn" @click="closeCatModal">
-            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"
-              stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
+          <button class="close-btn" @click="closeCatModal">X</button>
         </div>
         <div class="modal-content">
           <div class="cat-image-detail">
@@ -111,12 +105,13 @@
             <p><strong>Jenis Kelamin : </strong>{{ selectedCat.gender }}</p>
             <p><strong>Ras : </strong>{{ selectedCat.ras }}</p>
             <p><strong>Karakter : </strong>{{ selectedCat.karakteristik }}</p>
-            <p><strong>Status vaksinasi : </strong>{{ selectedCat.isVaccinated }}</p>
+            <p><strong>Status vaksinasi : </strong>{{ selectedCat.isVaccinated ? 'Sudah' : 'Belum' }}</p>
             <button class="adopt-detail-btn" @click="handleAdoptClick">Adopsi</button>
           </div>
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -136,9 +131,9 @@ export default {
       isModalOpen: false,
       selectedCat: {},
       
-      availableCats: [],    // Kucing di halaman utama (GET /)
-      verificationList: [], // List "Verifikasi Adopsi" (GET /pending)
-      historyList: [],      // List "Sejarah Adopsi" (GET /history)
+      availableCats: [],    
+      verificationList: [], 
+      historyList: [],      
       
       limit: 8,
       defaultImage: defaultImageSrc
@@ -150,6 +145,7 @@ export default {
     }
   },
   methods: {
+    // ... (Method getImgUrl, scrollToSection, showCatModal, closeCatModal SAMA) ...
     getImgUrl(path) {
       if (!path) return this.defaultImage;
       if (path.startsWith('http')) return path;
@@ -160,9 +156,7 @@ export default {
 
     scrollToSection(id) {
       const element = document.getElementById(id);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
 
     showCatModal(cat) {
@@ -174,48 +168,57 @@ export default {
       this.selectedCat = {};
     },
 
-    // --- REQUEST ADOPSI ---
     async handleAdoptClick() {
       const token = localStorage.getItem('token');
-      
       if (!token || !this.currentUser) {
         alert("Silakan login terlebih dahulu untuk mengadopsi!");
         this.$router.push('/login');
         return;
       }
-
-      if (!confirm(`Apakah kamu yakin ingin mengajukan adopsi untuk ${this.selectedCat.nama}?`)) {
-        return;
-      }
+      if (!confirm(`Apakah kamu yakin ingin mengajukan adopsi untuk ${this.selectedCat.nama}?`)) return;
 
       try {
-        // Panggil endpoint adopt (Tanggal akan NULL di database)
         await axios.put(
           `http://localhost:3000/api/cats/adopt/${this.selectedCat.id}`,
           { username: this.currentUser }, 
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
-        alert(`Permintaan adopsi ${this.selectedCat.nama} berhasil dikirim! Silakan cek status verifikasi.`);
-        
+        alert(`Permintaan adopsi ${this.selectedCat.nama} berhasil dikirim!`);
         this.closeCatModal();
-        
-        // Refresh semua data
-        await this.fetchCats(); 
-        await this.fetchPending(); // Update list verifikasi
-        await this.fetchHistory();
-
-        this.$nextTick(() => {
-          this.scrollToSection('list-view');
-        });
-
+        await this.refreshAllData();
+        this.$nextTick(() => { this.scrollToSection('list-view'); });
       } catch (error) {
         console.error("Gagal mengadopsi:", error);
         alert(error.response?.data?.message || "Terjadi kesalahan.");
       }
     },
 
-    // 1. Fetch Kucing Available
+    // --- BARU: Handle Tombol AMBIL ---
+    async handleTakeCat(catId, catName) {
+        if(!confirm(`Apakah anda yakin sudah mengambil ${catName}? Kucing ini akan dipindahkan ke histori anda.`)) return;
+        
+        const token = localStorage.getItem('token');
+        try {
+            await axios.put(
+                `http://localhost:3000/api/cats/take/${catId}`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            alert(`${catName} berhasil diambil! Selamat memelihara.`);
+            await this.refreshAllData(); // Refresh agar pindah ke history
+        } catch (error) {
+            console.error("Gagal update status ambil:", error);
+            alert("Gagal memproses permintaan.");
+        }
+    },
+
+    async refreshAllData() {
+        await this.fetchCats();
+        await this.fetchPending();
+        await this.fetchHistory();
+    },
+
+    // Fetch Kucing Available
     async fetchCats() {
       try {
         const response = await axios.get('http://localhost:3000/api/cats');
@@ -225,39 +228,56 @@ export default {
       }
     },
 
-    // 2. Fetch Data Pending (Verifikasi)
+    // Fetch Data Pending (Diupdate logikanya)
     async fetchPending() {
       if (!this.currentUser) return;
       try {
         const response = await axios.get(`http://localhost:3000/api/cats/pending/${this.currentUser}`);
         
-        this.verificationList = response.data.map(cat => ({
-          name: cat.nama,
-          age: cat.age,
-          dob: '-', // Belum ada tanggal adopsi
-          image: this.getImgUrl(cat.img_url),
-          status: 'Menunggu Verifikasi' // Teks status
-        }));
+        this.verificationList = response.data.map(cat => {
+            // Cek apakah tanggal sudah diisi admin?
+            const hasDate = cat.adoptdate !== null;
+            
+            return {
+                id: cat.id,
+                name: cat.nama,
+                age: cat.age,
+                // Jika sudah ada tanggal, tampilkan. Jika belum, strip.
+                dob: hasDate ? new Date(cat.adoptdate).toLocaleDateString('id-ID') : '-',
+                image: this.getImgUrl(cat.img_url),
+                // Flag untuk menentukan tampilan tombol vs teks pending
+                isReadyToTake: hasDate 
+            };
+        });
       } catch (error) {
         console.error("Gagal ambil data pending:", error);
       }
     },
 
-    // 3. Fetch Data History (Selesai)
+    // Fetch Data History (Selesai)
     async fetchHistory() {
       if (!this.currentUser) return;
       try {
         const response = await axios.get(`http://localhost:3000/api/cats/history/${this.currentUser}`);
         
-        this.historyList = response.data.map(cat => ({
-          name: cat.nama,
-          age: cat.age,
-          // Tanggal sudah ada
-          dob: cat.adoptdate ? new Date(cat.adoptdate).toLocaleDateString('id-ID') : '-', 
-          duration: 'Baru saja', 
-          image: this.getImgUrl(cat.img_url),
-          status: 'Berhasil Diadopsi'
-        }));
+        this.historyList = response.data.map(cat => {
+          let duration = 'Baru saja';
+          if (cat.adoptdate) {
+            const adoptDate = new Date(cat.adoptdate);
+            const currentDate = new Date();
+            const diffTime = Math.abs(currentDate - adoptDate);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+            duration = `${diffDays} Hari`;
+          }
+
+          return {
+            name: cat.nama,
+            age: cat.age,
+            dob: cat.adoptdate ? new Date(cat.adoptdate).toLocaleDateString('id-ID') : '-', 
+            duration: duration, 
+            image: this.getImgUrl(cat.img_url),
+          };
+        });
       } catch (error) {
         console.error("Gagal ambil history:", error);
       }
@@ -276,11 +296,10 @@ export default {
     if (token && user) {
       this.isLoggedIn = true;
       this.currentUser = user;
-      this.fetchPending(); // Panggil fetch pending
-      this.fetchHistory(); // Panggil fetch history
+      this.refreshAllData();
+    } else {
+      this.fetchCats();
     }
-
-    this.fetchCats();
   }
 }
 </script>
@@ -688,6 +707,33 @@ h2 {
   color: #888;
   margin-top: 20px;
   font-style: italic;
+}
+
+.ambil-btn {
+  background-color: #28a745; /* Warna Hijau */
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 10px;
+  transition: background-color 0.3s;
+}
+
+.ambil-btn:hover {
+  background-color: #218838;
+}
+
+.status-text.pending {
+    color: #dc3545; /* Merah untuk menunggu */
+    font-weight: bold;
+}
+
+.status-text.success {
+    color: #28a745; /* Hijau untuk siap diambil */
+    font-weight: bold;
+    margin-bottom: 5px;
 }
 
 @media (max-width: 1024px) {

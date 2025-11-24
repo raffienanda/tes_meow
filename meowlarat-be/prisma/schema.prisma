@@ -27,6 +27,7 @@ model cat {
   isAdopted     Boolean?  @map("isadopted")       // Optional Boolean (can be NULL)
   adopter        String?         @db.VarChar(255) // Foreign Key (Optional/NULLable)
   adoptdate      DateTime?       @db.Date        // Date type in PostgreSQL maps to DateTime in Prisma
+  isTaken       Boolean  @default(false)
   users         users?          @relation(fields: [adopter], references: [username], onDelete: NoAction, onUpdate: NoAction)
   tanggungjawab tanggungjawab[]
 }

@@ -11,11 +11,6 @@
         <form class="login-form" @submit.prevent="handleSend">
           <input type="email" v-model="email" placeholder="Email terdaftar" required />
           
-          <div class="options">
-            <div></div>
-            <router-link to="/login">Kembali ke Login</router-link>
-          </div>
-          
           <button type="submit" class="signin-btn" :disabled="isLoading">
             {{ isLoading ? 'Mengirim...' : 'Kirim Link Reset' }}
           </button>
@@ -135,14 +130,6 @@ h1 {
   padding: 12px;
   margin-bottom: 15px;
   font-size: 1rem;
-}
-
-.options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.9rem;
-  color: #333;
 }
 
 .signin-btn {

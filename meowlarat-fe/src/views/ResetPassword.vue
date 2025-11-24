@@ -12,11 +12,6 @@
           <input type="password" v-model="password" placeholder="Password baru" required />
           <input type="password" v-model="confirm" placeholder="Konfirmasi password" required />
           
-          <div class="options">
-            <div></div>
-            <router-link to="/login">Kembali ke Login</router-link>
-          </div>
-          
           <button type="submit" class="signin-btn" :disabled="isLoading">
             {{ isLoading ? 'Memproses...' : 'Reset Password' }}
           </button>
@@ -160,13 +155,6 @@ h1 {
   font-size: 1rem;
 }
 
-.options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.9rem;
-  color: #333;
-}
 
 .signin-btn {
   background-color: #e9e9c0;

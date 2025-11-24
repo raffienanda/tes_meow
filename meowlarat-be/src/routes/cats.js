@@ -3,7 +3,7 @@ const prisma = new PrismaClient();
 
 async function catRoutes(fastify, options) {
   
-  // 1. GET SEMUA KUCING AVAILABLE (Belum diadopsi)
+  // 1. GET SEMUA KUCING AVAILABLE
   fastify.get('/', async (request, reply) => {
     try {
       const cats = await prisma.cat.findMany({
@@ -17,8 +17,9 @@ async function catRoutes(fastify, options) {
     }
   });
 
-  // 2. GET LIST "VERIFIKASI ADOPSI" (Pending)
-  // Kriteria: isAdopted = true DAN adoptdate = null
+  // 2. GET LIST "LIST KUCING ANDA" (Gabungan Pending & Siap Diambil)
+  // Kriteria: isAdopted = true DAN isTaken = false
+  // (Tidak peduli adoptdate null atau tidak, selama belum diambil, masuk sini)
   fastify.get('/pending/:username', async (request, reply) => {
     const { username } = request.params;
     try {
@@ -26,7 +27,7 @@ async function catRoutes(fastify, options) {
         where: { 
           isAdopted: true,
           adopter: username,
-          adoptdate: null // Penting: Tanggal masih kosong
+          isTaken: false // Penting: Hanya yang belum diklik "Ambil"
         },
         orderBy: { id: 'desc' }
       });
@@ -38,7 +39,7 @@ async function catRoutes(fastify, options) {
   });
 
   // 3. GET LIST "SEJARAH ADOPSI" (Selesai)
-  // Kriteria: isAdopted = true DAN adoptdate = TIDAK null
+  // Kriteria: isAdopted = true DAN isTaken = true (Sudah diambil user)
   fastify.get('/history/:username', async (request, reply) => {
     const { username } = request.params;
     try {
@@ -46,7 +47,7 @@ async function catRoutes(fastify, options) {
         where: { 
           isAdopted: true,
           adopter: username,
-          adoptdate: { not: null } // Penting: Tanggal sudah terisi
+          isTaken: true // Penting: Hanya yang sudah diambil
         },
         orderBy: { adoptdate: 'desc' }
       });
@@ -57,6 +58,7 @@ async function catRoutes(fastify, options) {
     }
   });
 
+  // ... (Endpoint GET /:id dan POST / tetap sama, tidak perlu diubah) ...
   // 4. GET DETAIL KUCING
   fastify.get('/:id', async (request, reply) => {
     const { id } = request.params;
@@ -79,7 +81,8 @@ async function catRoutes(fastify, options) {
         data: {
           nama, age, gender, ras, karakteristik, img_url,
           isVaccinated: isVaccinatedBool, 
-          isAdopted: false
+          isAdopted: false,
+          isTaken: false // Default false
         }
       });
       return newCat;
@@ -88,7 +91,7 @@ async function catRoutes(fastify, options) {
     }
   });
 
-  // 6. USER REQUEST ADOPSI (Masuk ke Verifikasi)
+  // 6. USER REQUEST ADOPSI
   fastify.put('/adopt/:id', async (request, reply) => {
     const { id } = request.params;
     const { username } = request.body;
@@ -103,35 +106,52 @@ async function catRoutes(fastify, options) {
       const updatedCat = await prisma.cat.update({
         where: { id: Number(id) },
         data: {
-          isAdopted: true,     // Tandai sudah diambil
-          adopter: username,   // Siapa yang ambil
-          adoptdate: null      // JANGAN ISI TANGGAL DULU (Menunggu Admin)
+          isAdopted: true,
+          adopter: username,
+          adoptdate: null,
+          isTaken: false
         }
       });
 
-      return { message: 'Permintaan adopsi dikirim. Menunggu verifikasi admin.', data: updatedCat };
+      return { message: 'Permintaan adopsi dikirim.', data: updatedCat };
     } catch (error) {
       return reply.code(500).send({ message: 'Gagal memproses adopsi', error: error.message });
     }
   });
 
-  // 7. ADMIN VERIFIKASI ADOPSI (Input Tanggal)
-  // Endpoint ini nanti dipakai di halaman Admin untuk menyetujui
+  // 7. ADMIN VERIFIKASI ADOPSI (Hanya set tanggal, BELUM pindah ke history user)
   fastify.put('/verify/:id', async (request, reply) => {
     const { id } = request.params;
-    // Bisa kirim tanggal custom dari body, atau pakai tanggal sekarang
     const { date } = request.body; 
 
     try {
       const updatedCat = await prisma.cat.update({
         where: { id: Number(id) },
         data: {
-          adoptdate: date ? new Date(date) : new Date() // Isi tanggal, status jadi resmi History
+          adoptdate: date ? new Date(date) : new Date() 
+          // isTaken tetap false
         }
       });
       return { message: 'Adopsi diverifikasi', data: updatedCat };
     } catch (error) {
       return reply.code(500).send({ message: 'Gagal verifikasi', error: error.message });
+    }
+  });
+
+  // 8. BARU: USER KLIK TOMBOL "AMBIL" (Pindah ke History)
+  fastify.put('/take/:id', async (request, reply) => {
+    const { id } = request.params;
+
+    try {
+      const updatedCat = await prisma.cat.update({
+        where: { id: Number(id) },
+        data: {
+          isTaken: true // Ini yang memindahkan ke history di mata user
+        }
+      });
+      return { message: 'Kucing berhasil diambil!', data: updatedCat };
+    } catch (error) {
+      return reply.code(500).send({ message: 'Gagal mengambil kucing', error: error.message });
     }
   });
 }
