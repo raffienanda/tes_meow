@@ -65,7 +65,7 @@
             <div class="status-details">
               <p>Nama : {{ verif.name }}</p>
               <p>Umur : {{ verif.age }}</p>
-              <p>Tanggal Lahir : {{ verif.dob }}</p>
+              <p>Tanggal Adopsi : {{ verif.dob }}</p>
               <p class="status-text">Status : {{ verif.status }}</p>
             </div>
           </div>
@@ -79,7 +79,7 @@
             <div class="status-details">
               <p>Nama : {{ history.name }}</p>
               <p>Umur : {{ history.age }}</p>
-              <p>Tanggal Lahir : {{ history.dob }}</p>
+              <p>Tanggal Adopsi : {{ history.dob }}</p>
               <p>Diadopsi Selama : {{ history.duration }}</p>
               <router-link to="/form" class="form-btn">Form</router-link>
             </div>
