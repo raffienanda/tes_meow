@@ -124,7 +124,6 @@
 import axios from 'axios';
 import Navbar from '../components/Navbar.vue';
 import NavbarLogin from '../components/NavbarLogin.vue';
-// PERBAIKAN 3: Import gambar default agar terbaca oleh Vite
 import defaultImageSrc from '../assets/img/Hero-adopt.jpg';
 
 export default {
@@ -133,14 +132,16 @@ export default {
   data() {
     return {
       isLoggedIn: false,
+      currentUser: null,
       isModalOpen: false,
       selectedCat: {},
-      availableCats: [],
-      verificationList: [],
-      historyList: [],
+      
+      availableCats: [],    // Kucing di halaman utama (GET /)
+      verificationList: [], // List "Verifikasi Adopsi" (GET /pending)
+      historyList: [],      // List "Sejarah Adopsi" (GET /history)
+      
       limit: 8,
-      // Masukkan ke data agar bisa dipakai di template
-      defaultImage: defaultImageSrc 
+      defaultImage: defaultImageSrc
     };
   },
   computed: {
@@ -149,21 +150,11 @@ export default {
     }
   },
   methods: {
-    // PERBAIKAN 4: Function untuk memperbaiki URL gambar dari database
     getImgUrl(path) {
-      if (!path) return ''; 
-      
-      // Jika URL sudah lengkap (misal placekitten atau link external), pakai langsung
+      if (!path) return this.defaultImage;
       if (path.startsWith('http')) return path;
-
-      // Bersihkan path: 
-      // 1. Ganti backslash Windows '\' jadi slash '/'
       let cleanPath = path.replace(/\\/g, '/');
-      
-      // 2. Hapus slash di depan jika ada (biar rapi saat digabung)
       if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
-
-      // 3. Gabungkan dengan alamat backend (Port 3000)
       return `http://localhost:3000/uploads/img-lapor/${cleanPath}`;
     },
 
@@ -173,6 +164,7 @@ export default {
         element.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     },
+
     showCatModal(cat) {
       this.selectedCat = cat;
       this.isModalOpen = true;
@@ -181,42 +173,113 @@ export default {
       this.isModalOpen = false;
       this.selectedCat = {};
     },
-    handleAdoptClick() {
+
+    // --- REQUEST ADOPSI ---
+    async handleAdoptClick() {
       const token = localStorage.getItem('token');
-      if (!token) {
+      
+      if (!token || !this.currentUser) {
         alert("Silakan login terlebih dahulu untuk mengadopsi!");
         this.$router.push('/login');
         return;
       }
-      alert("Permintaan adopsi telah diterima, silahkan Verifikasi Adopsi!");
-      this.closeCatModal();
-      this.$nextTick(() => {
-        this.scrollToSection('list-view');
-      });
+
+      if (!confirm(`Apakah kamu yakin ingin mengajukan adopsi untuk ${this.selectedCat.nama}?`)) {
+        return;
+      }
+
+      try {
+        // Panggil endpoint adopt (Tanggal akan NULL di database)
+        await axios.put(
+          `http://localhost:3000/api/cats/adopt/${this.selectedCat.id}`,
+          { username: this.currentUser }, 
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        alert(`Permintaan adopsi ${this.selectedCat.nama} berhasil dikirim! Silakan cek status verifikasi.`);
+        
+        this.closeCatModal();
+        
+        // Refresh semua data
+        await this.fetchCats(); 
+        await this.fetchPending(); // Update list verifikasi
+        await this.fetchHistory();
+
+        this.$nextTick(() => {
+          this.scrollToSection('list-view');
+        });
+
+      } catch (error) {
+        console.error("Gagal mengadopsi:", error);
+        alert(error.response?.data?.message || "Terjadi kesalahan.");
+      }
     },
+
+    // 1. Fetch Kucing Available
     async fetchCats() {
       try {
         const response = await axios.get('http://localhost:3000/api/cats');
         this.availableCats = response.data;
       } catch (error) {
-        console.error("Gagal mengambil data kucing:", error);
+        console.error("Gagal ambil data kucing:", error);
       }
     },
-    loadMore() {
-      this.limit += 8;
+
+    // 2. Fetch Data Pending (Verifikasi)
+    async fetchPending() {
+      if (!this.currentUser) return;
+      try {
+        const response = await axios.get(`http://localhost:3000/api/cats/pending/${this.currentUser}`);
+        
+        this.verificationList = response.data.map(cat => ({
+          name: cat.nama,
+          age: cat.age,
+          dob: '-', // Belum ada tanggal adopsi
+          image: this.getImgUrl(cat.img_url),
+          status: 'Menunggu Verifikasi' // Teks status
+        }));
+      } catch (error) {
+        console.error("Gagal ambil data pending:", error);
+      }
     },
-    showLess() {
+
+    // 3. Fetch Data History (Selesai)
+    async fetchHistory() {
+      if (!this.currentUser) return;
+      try {
+        const response = await axios.get(`http://localhost:3000/api/cats/history/${this.currentUser}`);
+        
+        this.historyList = response.data.map(cat => ({
+          name: cat.nama,
+          age: cat.age,
+          // Tanggal sudah ada
+          dob: cat.adoptdate ? new Date(cat.adoptdate).toLocaleDateString('id-ID') : '-', 
+          duration: 'Baru saja', 
+          image: this.getImgUrl(cat.img_url),
+          status: 'Berhasil Diadopsi'
+        }));
+      } catch (error) {
+        console.error("Gagal ambil history:", error);
+      }
+    },
+
+    loadMore() { this.limit += 8; },
+    showLess() { 
       this.limit = 8; 
-      this.$nextTick(() => {
-        this.scrollToSection('adopsi-view');
-      });
+      this.$nextTick(() => { this.scrollToSection('adopsi-view'); });
     }
   },
   mounted() {
     const token = localStorage.getItem('token');
-    if (token) {
+    const user = localStorage.getItem('username');
+
+    if (token && user) {
       this.isLoggedIn = true;
+      this.currentUser = user;
+      this.fetchPending(); // Panggil fetch pending
+      this.fetchHistory(); // Panggil fetch history
     }
+
     this.fetchCats();
   }
 }

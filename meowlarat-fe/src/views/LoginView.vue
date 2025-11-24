@@ -55,13 +55,21 @@ const handleLogin = async () => {
       password: password.value
     });
 
-    // Simpan Token dan Info User ke LocalStorage
-    // Ini penting agar user tetap login meski halaman di-refresh
+    // Simpan Token dan Info User
     localStorage.setItem('token', response.data.token);
     localStorage.setItem('user', JSON.stringify(response.data.user));
+    
+    // --- TAMBAHAN PENTING ---
+    // Simpan username secara terpisah agar terbaca oleh AdopsiView & Navbar
+    localStorage.setItem('username', response.data.user.username); 
+    // ------------------------
 
     alert('Login Berhasil! Selamat datang ' + response.data.user.nama);
     router.push('/'); // Pindah ke Beranda
+
+    // Opsional: Paksa refresh halaman agar Navbar langsung berubah (jika router.push tidak otomatis update state navbar)
+    // setTimeout(() => { window.location.href = '/'; }, 100); 
+
   } catch (error) {
     console.error(error);
     alert(error.response?.data?.message || 'Username atau Password salah');
