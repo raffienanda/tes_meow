@@ -41,7 +41,7 @@
             <h2>{{ topic.title }}</h2>
             
             <div class="topic-meta">
-              <span class="author-name">Oleh: {{ topic.user ? topic.user.nama : 'Anonim' }}</span>
+              <span class="author-name">Oleh: {{ topic.users ? topic.users.nama : 'Anonim' }}</span>
             </div>
             
             <p class="topic-excerpt">"{{ truncateText(topic.teks) }}"</p>
@@ -99,7 +99,7 @@
         <div class="topic-detail-content">
           <div class="main-post">
             <p class="detail-meta">
-              Penulis: <strong>{{ threadDetail?.user?.nama || selectedTopic.user?.nama }}</strong> | 
+              Penulis: <strong>{{ threadDetail?.users?.nama || selectedTopic.users?.nama }}</strong> | 
               Kategori: {{ getCategoryName(threadDetail?.category || selectedTopic.category) }}
             </p>
             <div class="detail-excerpt">{{ threadDetail?.teks || selectedTopic.teks }}</div>
@@ -115,7 +115,7 @@
             <div v-else-if="threadDetail.posts && threadDetail.posts.length > 0" class="comments-list">
               <div v-for="post in threadDetail.posts" :key="post.id" class="comment-item">
                 <div class="comment-header">
-                  <strong>{{ post.user ? post.user.nama : 'User' }}</strong>
+                  <strong>{{ post.users ? post.users.nama : 'User' }}</strong>
                 </div>
                 <p class="comment-text">{{ post.teks }}</p>
               </div>
