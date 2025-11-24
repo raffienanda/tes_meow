@@ -23,8 +23,8 @@ model cat {
   gender        String          @db.VarChar(10)
   ras           String          @db.VarChar(255)
   karakteristik String
-  isvaccinated   Boolean
-  isadopted      Boolean?        // Optional Boolean (can be NULL)
+  isVaccinated  Boolean   @map("isvaccinated")
+  isAdopted     Boolean?  @map("isadopted")       // Optional Boolean (can be NULL)
   adopter        String?         @db.VarChar(255) // Foreign Key (Optional/NULLable)
   adoptdate      DateTime?       @db.Date        // Date type in PostgreSQL maps to DateTime in Prisma
   users         users?          @relation(fields: [adopter], references: [username], onDelete: NoAction, onUpdate: NoAction)
