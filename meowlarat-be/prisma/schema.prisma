@@ -117,6 +117,10 @@ model users {
   password String    @db.VarChar(255)
   bio      String    @db.VarChar(255)
   img_url  String    @db.VarChar(255)
+
+  resetPasswordToken   String?   @db.VarChar(255) // Menyimpan token unik
+  resetPasswordExpires DateTime?                  // Menyimpan waktu kadaluarsa token
+  
   cat      cat[]
   donasi   donasi[]
   posts    posts[]
