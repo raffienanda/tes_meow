@@ -30,25 +30,17 @@
         <div class="cat-list-wrapper">
           <div class="cat-grid">
             <div v-for="(cat, index) in displayedCats" :key="index" class="cat-card" @click="showCatModal(cat)">
-              <img :src="cat.img_url" :alt="cat.nama" class="cat-image">
+              <img :src="getImgUrl(cat.img_url)" :alt="cat.nama" class="cat-image">
               <p class="cat-name">{{ cat.nama }}</p>
             </div>
           </div>
 
           <div class="button-group">
-            <button 
-              v-if="limit < availableCats.length" 
-              class="more-btn" 
-              @click="loadMore"
-            >
+            <button v-if="limit < availableCats.length" class="more-btn" @click="loadMore">
               Lihat lebih banyak
             </button>
 
-            <button 
-              v-if="limit > 8" 
-              class="more-btn less-btn" 
-              @click="showLess"
-            >
+            <button v-if="limit > 8" class="more-btn less-btn" @click="showLess">
               Lihat lebih sedikit
             </button>
           </div>
@@ -64,8 +56,7 @@
       <section class="my-list-section" id="list-view">
         <h1 class="my-list-title">List Kucing Anda</h1>
         <p class="my-list-description">Di sini kamu bisa melihat status permintaan adopsi serta daftar kucing yang sudah
-          berhasil kamu adopsi. Pantau proses pengajuanmu dan kenang kembali kucing yang kini telah menemukan rumah
-          barunya.</p>
+          berhasil kamu adopsi.</p>
 
         <div class="list-card-wrapper">
           <h2 class="sub-section-title">Verifikasi Adopsi</h2>
@@ -112,8 +103,7 @@
         </div>
         <div class="modal-content">
           <div class="cat-image-detail">
-            <img :src="selectedCat.img_url || '../assets/img/Hero-adopt.jpg'" :alt="selectedCat.name"
-              class="cat-detail-img">
+            <img :src="getImgUrl(selectedCat.img_url) || defaultImage" :alt="selectedCat.name" class="cat-detail-img">
           </div>
           <div class="cat-details-text">
             <p><strong>Nama : </strong>{{ selectedCat.nama }}</p>
@@ -134,6 +124,8 @@
 import axios from 'axios';
 import Navbar from '../components/Navbar.vue';
 import NavbarLogin from '../components/NavbarLogin.vue';
+// PERBAIKAN 3: Import gambar default agar terbaca oleh Vite
+import defaultImageSrc from '../assets/img/Hero-adopt.jpg';
 
 export default {
   name: 'AdoptView',
@@ -146,17 +138,35 @@ export default {
       availableCats: [],
       verificationList: [],
       historyList: [],
-      // PERUBAHAN 3: Limit awal 8 (4 kolom x 2 baris)
-      limit: 8
+      limit: 8,
+      // Masukkan ke data agar bisa dipakai di template
+      defaultImage: defaultImageSrc 
     };
   },
   computed: {
-    // PERUBAHAN 4: Computed property untuk memotong array
     displayedCats() {
       return this.availableCats.slice(0, this.limit);
     }
   },
   methods: {
+    // PERBAIKAN 4: Function untuk memperbaiki URL gambar dari database
+    getImgUrl(path) {
+      if (!path) return ''; 
+      
+      // Jika URL sudah lengkap (misal placekitten atau link external), pakai langsung
+      if (path.startsWith('http')) return path;
+
+      // Bersihkan path: 
+      // 1. Ganti backslash Windows '\' jadi slash '/'
+      let cleanPath = path.replace(/\\/g, '/');
+      
+      // 2. Hapus slash di depan jika ada (biar rapi saat digabung)
+      if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
+
+      // 3. Gabungkan dengan alamat backend (Port 3000)
+      return `http://localhost:3000/uploads/img-lapor/${cleanPath}`;
+    },
+
     scrollToSection(id) {
       const element = document.getElementById(id);
       if (element) {
@@ -192,13 +202,11 @@ export default {
         console.error("Gagal mengambil data kucing:", error);
       }
     },
-    // PERUBAHAN 5: Fungsi untuk menambah limit (tambah 8 lagi setiap klik)
     loadMore() {
       this.limit += 8;
     },
     showLess() {
-      this.limit = 8; // Reset limit ke 8
-      // Scroll balik ke atas daftar biar user ga bingung
+      this.limit = 8; 
       this.$nextTick(() => {
         this.scrollToSection('adopsi-view');
       });
@@ -215,7 +223,7 @@ export default {
 </script>
 
 <style scoped>
-/* CSS SAMA SEPERTI SEBELUMNYA, HANYA ADA TAMBAHAN KECIL UNTUK TEKS */
+/* ... (Style CSS biarkan sama persis seperti sebelumnya) ... */
 .adopt-page {
   padding-bottom: 50px;
   color: white;
