@@ -15,6 +15,7 @@ import catRoutes from './routes/cats.js';
 import forumRoutes from './routes/forum.js';
 import statsRoutes from './routes/stats.js';
 import laporRoutes from './routes/lapor.js'; // Route baru
+import tanggungjawabRoutes from './routes/tanggungjawab.js';
 
 dotenv.config();
 
@@ -46,6 +47,7 @@ fastify.register(catRoutes, { prefix: '/api/cats' });
 fastify.register(forumRoutes, { prefix: '/api/forum' });
 fastify.register(statsRoutes, { prefix: '/api/stats' });
 fastify.register(laporRoutes, { prefix: '/api/lapor' }); // Endpoint: /api/lapor
+fastify.register(tanggungjawabRoutes, { prefix: '/api/tanggungjawab' });
 
 // Endpoint Cek Server
 fastify.get('/', async (request, reply) => {

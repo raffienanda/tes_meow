@@ -1,97 +1,189 @@
 <template>
- <div class="form-page">
-  <Navbar />
+  <div class="form-page">
+    <Navbar />
 
-  <section class="container">
-   <h1 class="title">Form Pemilik Bertanggungjawab</h1>
-   <p class="subtitle">
-    Ayo menjadi owner yang baik dengan mengisi form di bawah ini.
-   </p>
+    <section class="container">
+      <h1 class="title">Form Pemilik Bertanggungjawab</h1>
+      <p class="subtitle">
+        Ayo menjadi owner yang baik dengan mengisi form di bawah ini.
+      </p>
 
-      <div class="profile-card">
-        <h2>Profil Kucing</h2>
-        <div class="profile-content">
-          <img src="../assets/img/cat-donasi.png" alt="Foto Kucing" class="cat-photo" />
-          <div class="cat-info">
-            <p><strong>Nama :</strong> abul</p>
-            <p><strong>Umur :</strong> 9 Bulan</p>
-            <p><strong>Tanggal Lahir :</strong> 1 Desember 2024</p>
-            <p><strong>Diadopsi Selama :</strong> 1 Minggu</p>
+      <div v-if="loading" class="loading-text">Memuat data...</div>
+
+      <div v-else>
+        <div class="profile-card">
+          <h2>Profil Kucing</h2>
+          <div class="profile-content">
+            <img src="../assets/img/cat-donasi.png" alt="Foto Kucing" class="cat-photo" />
+            <div class="cat-info">
+              <p><strong>Nama :</strong> {{ catData.catName }}</p>
+              <p><strong>Tanggal Adopsi :</strong> {{ formatDate(catData.adoptDate) }}</p>
+              <p><strong>Lama Adopsi :</strong> {{ catData.daysAdopted }} Hari</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="week-card">
-        <h3>Minggu Pertama</h3>
-        <div class="week-content">
-          <div class="week-item">
-            <h4>Makanan:</h4>
-            <img src="../assets/img/makanan.png" alt="Makanan" />
-            <input type="file" />
+        <div 
+          v-for="week in 3" 
+          :key="week" 
+          class="week-card" 
+          :class="{ locked: isLocked(week) }"
+        >
+          <h3>Minggu Ke-{{ week }}</h3>
+          
+          <div v-if="isLocked(week)" class="week-content-locked">
+             <div class="lock-icon">🔒</div>
+             <p>Form ini akan terbuka pada hari ke-{{ (week - 1) * 7 }} setelah adopsi.</p>
           </div>
-          <div class="week-item">
-            <h4>Aktivitas:</h4>
-            <img src="../assets/img/aktivitas.png" alt="Aktivitas" />
-            <input type="file" />
+
+          <div v-else class="week-content">
+            <div class="week-item">
+              <h4>Makanan:</h4>
+              <img :src="getPreview(week, 'makanan') || '../assets/img/makanan.png'" alt="Makanan" />
+              <input type="file" @change="handleFileChange($event, week, 'makanan')" />
+            </div>
+            <div class="week-item">
+              <h4>Aktivitas:</h4>
+              <img :src="getPreview(week, 'aktivitas') || '../assets/img/aktivitas.png'" alt="Aktivitas" />
+              <input type="file" @change="handleFileChange($event, week, 'aktivitas')" />
+            </div>
+            <div class="week-item">
+              <h4>Kotoran:</h4>
+              <img :src="getPreview(week, 'kotoran') || '../assets/img/kotoran.png'" alt="Kotoran" />
+              <input type="file" @change="handleFileChange($event, week, 'kotoran')" />
+            </div>
           </div>
-          <div class="week-item">
-            <h4>Kotoran:</h4>
-            <img src="../assets/img/kotoran.png" alt="Kotoran" />
-            <input type="file" />
-          </div>
+
+          <button 
+            v-if="!isLocked(week)" 
+            class="submit-btn" 
+            @click="submitForm(week)"
+            :disabled="uploading"
+          >
+            {{ uploading ? 'Mengirim...' : 'Submit Minggu ' + week }}
+          </button>
         </div>
-        <button class="submit-btn">Submit</button>
       </div>
-
-      <div class="week-card locked">
-    <h3>Minggu Kedua</h3>
-    <div class="week-content">
-     <div class="week-item">
-      <h4>Makanan:</h4>
-      <div class="placeholder"></div>
-      <input type="file" disabled />
-     </div>
-     <div class="week-item">
-      <h4>Aktivitas:</h4>
-      <div class="lock-icon">🔒</div>
-      <input type="file" disabled />
-     </div>
-     <div class="week-item">
-      <h4>Kotoran:</h4>
-      <div class="placeholder"></div>
-      <input type="file" disabled />
-     </div>
-    </div>
-    <button class="submit-btn" disabled>Submit</button>
-    </div>
-
-      <div class="week-card locked">
-    <h3>Minggu Ketiga</h3>
-    <div class="week-content">
-     <div class="week-item">
-      <h4>Makanan:</h4>
-      <div class="placeholder"></div>
-      <input type="file" disabled />
-     </div>
-     <div class="week-item">
-      <h4>Aktivitas:</h4>
-      <div class="lock-icon">🔒</div>
-      <input type="file" disabled />
-     </div>
-     <div class="week-item">
-      <h4>Kotoran:</h4>
-      <div class="placeholder"></div>
-      <input type="file" disabled />
-     </div>
-    </div>
-    <button class="submit-btn" disabled>Submit</button>
-   </div>
-  </section>
- </div>
+    </section>
+  </div>
 </template>
 
 <script setup>
 import Navbar from "@/components/Navbar.vue";
+import { ref, onMounted } from "vue";
+import axios from "axios";
+import { useRoute } from "vue-router";
+
+const route = useRoute();
+// Kita ambil ID kucing dari query parameter, misalnya /form?catId=1
+// Atau bisa di-hardcode dulu untuk tes jika belum ada sistem passing ID
+const catId = route.query.catId || 1; 
+
+const catData = ref({});
+const loading = ref(true);
+const uploading = ref(false);
+
+// State untuk menyimpan file yang akan diupload
+const files = ref({
+  week1: { makanan: null, aktivitas: null, kotoran: null },
+  week2: { makanan: null, aktivitas: null, kotoran: null },
+  week3: { makanan: null, aktivitas: null, kotoran: null },
+});
+
+// State untuk preview gambar (URL)
+const previews = ref({
+  week1: { makanan: null, aktivitas: null, kotoran: null },
+  week2: { makanan: null, aktivitas: null, kotoran: null },
+  week3: { makanan: null, aktivitas: null, kotoran: null },
+});
+
+const baseUrl = 'http://localhost:3000'; // Sesuaikan port backend
+
+const formatDate = (dateString) => {
+  if (!dateString) return "-";
+  return new Date(dateString).toLocaleDateString("id-ID", {
+    day: "numeric", month: "long", year: "numeric"
+  });
+};
+
+// Cek apakah minggu tersebut terkunci
+const isLocked = (week) => {
+  if (!catData.value.locks) return true;
+  if (week === 1) return catData.value.locks.week1;
+  if (week === 2) return catData.value.locks.week2;
+  if (week === 3) return catData.value.locks.week3;
+  return true;
+};
+
+// Handle Preview Gambar sebelum upload dan mengambil data dr backend
+const getPreview = (week, type) => {
+  // 1. Cek apakah ada preview lokal (user baru pilih file)
+  if (previews.value[`week${week}`][type]) {
+    return previews.value[`week${week}`][type];
+  }
+  // 2. Cek apakah sudah ada data di database
+  const dbKey = `gambar${type}${week}`; // cth: gambarmakanan1
+  if (catData.value.data && catData.value.data[dbKey]) {
+    return `${baseUrl}${catData.value.data[dbKey]}`;
+  }
+  return null;
+};
+
+const handleFileChange = (event, week, type) => {
+  const file = event.target.files[0];
+  if (file) {
+    files.value[`week${week}`][type] = file;
+    previews.value[`week${week}`][type] = URL.createObjectURL(file);
+  }
+};
+
+// Fetch Data saat halaman dibuka
+onMounted(async () => {
+  try {
+    // Pastikan catId valid
+    const response = await axios.get(`${baseUrl}/api/tanggungjawab/${catId}`);
+    catData.value = response.data;
+  } catch (error) {
+    console.error("Gagal mengambil data:", error);
+    alert("Gagal memuat data kucing. Pastikan ID benar.");
+  } finally {
+    loading.value = false;
+  }
+});
+
+// Fungsi Submit
+const submitForm = async (week) => {
+  const currentFiles = files.value[`week${week}`];
+  
+  // Validasi sederhana: minimal satu file harus dipilih jika belum ada di DB
+  if (!currentFiles.makanan && !currentFiles.aktivitas && !currentFiles.kotoran) {
+    // Cek apakah sudah ada di DB (jika edit) - logic sederhana
+    // alert("Mohon pilih foto untuk diupload!");
+    // return;
+  }
+
+  uploading.value = true;
+  const formData = new FormData();
+  
+  if (currentFiles.makanan) formData.append("makanan", currentFiles.makanan);
+  if (currentFiles.aktivitas) formData.append("aktivitas", currentFiles.aktivitas);
+  if (currentFiles.kotoran) formData.append("kotoran", currentFiles.kotoran);
+
+  try {
+    await axios.post(`${baseUrl}/api/tanggungjawab/${catId}/week/${week}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    alert(`Laporan Minggu ${week} Berhasil Disimpan!`);
+    // Refresh data agar status terbaru muncul
+    const response = await axios.get(`${baseUrl}/api/tanggungjawab/${catId}`);
+    catData.value = response.data;
+  } catch (error) {
+    console.error(error);
+    alert("Gagal mengupload laporan.");
+  } finally {
+    uploading.value = false;
+  }
+};
 </script>
 
 <style scoped>
