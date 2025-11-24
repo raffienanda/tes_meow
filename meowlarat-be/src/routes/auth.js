@@ -16,7 +16,7 @@ async function authRoutes(fastify, options) {
     }
 
     // 2. Cek apakah username/email sudah dipakai
-    const existingUser = await prisma.user.findFirst({
+    const existingUser = await prisma.users.findFirst({
       where: {
         OR: [
           { username: username },
@@ -34,7 +34,7 @@ async function authRoutes(fastify, options) {
 
     try {
       // 4. Simpan ke database
-      const newUser = await prisma.user.create({
+      const newUser = await prisma.users.create({
         data: {
           username,
           email,
@@ -59,7 +59,7 @@ async function authRoutes(fastify, options) {
     const { username, password } = request.body;
 
     // 1. Cari user berdasarkan username
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { username: username }
     });
 
@@ -121,7 +121,7 @@ async function authRoutes(fastify, options) {
     const username = request.user.username;
 
     try {
-      const updatedUser = await prisma.user.update({
+      const updatedUser = await prisma.users.update({
         where: { username: username },
         data: {
           nama: nama,

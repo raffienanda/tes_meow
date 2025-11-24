@@ -12,10 +12,10 @@ async function forumRoutes(fastify, options) {
 
       const whereClause = category ? { category: category } : {};
 
-      const threads = await prisma.thread.findMany({
+      const threads = await prisma.threads.findMany({
         where: whereClause,
         include: {
-          user: { select: { nama: true, img_url: true } }
+          users: { select: { nama: true, img_url: true } }
         },
         orderBy: { id: 'desc' } // Urutkan dari yang terbaru
       });
@@ -35,7 +35,7 @@ async function forumRoutes(fastify, options) {
       const { title, category, teks } = request.body; 
       const username = request.user.username;
 
-      const newThread = await prisma.thread.create({
+      const newThread = await prisma.threads.create({
         data: {
           title,
           category,
@@ -56,13 +56,13 @@ async function forumRoutes(fastify, options) {
     try {
       const { id } = request.params;
       
-      const thread = await prisma.thread.findUnique({
+      const thread = await prisma.threads.findUnique({
         where: { id: Number(id) },
         include: {
-          user: { select: { nama: true, img_url: true } },
+          users: { select: { nama: true, img_url: true } },
           posts: { // Ambil komentar (posts) yang terhubung
             include: {
-              user: { select: { nama: true, img_url: true } }
+              users: { select: { nama: true, img_url: true } }
             },
             orderBy: { id: 'asc' } // Komentar lama di atas
           }
@@ -89,14 +89,14 @@ async function forumRoutes(fastify, options) {
       const { teks } = request.body;
       const username = request.user.username;
 
-      const newPost = await prisma.post.create({
+      const newPost = await prisma.posts.create({
         data: {
           teks,
           id_thread: Number(id), // Hubungkan komentar ke thread ini
           username
         },
         include: {
-          user: { select: { nama: true, img_url: true } } // Return data user agar tampilan langsung update
+          users: { select: { nama: true, img_url: true } } // Return data user agar tampilan langsung update
         }
       });
 
