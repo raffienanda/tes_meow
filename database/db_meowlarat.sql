@@ -64,9 +64,10 @@ CREATE TABLE public.cat (
     gender character varying(10) NOT NULL,
     ras character varying(255) NOT NULL,
     karakteristik text NOT NULL,
-    isvaccinated character varying(50) NOT NULL,
-    isadopted character varying(50),
-    adopter character varying(255)
+    isvaccinated BOOLEAN NOT NULL, -- Changed to BOOLEAN
+    isadopted BOOLEAN, -- Changed to BOOLEAN
+    adopter character varying(255),
+    adoptdate DATE
 );
 
 
@@ -295,7 +296,7 @@ ALTER TABLE public.tanggungjawab ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTIT
 
 CREATE TABLE public.threads (
     id integer NOT NULL,
-    nama character varying(255) NOT NULL,
+    title character varying(255) NOT NULL,
     category character varying(255) NOT NULL,
     teks text NOT NULL,
     username character varying(255) NOT NULL
@@ -361,140 +362,6 @@ CREATE TABLE public.users (
 
 
 ALTER TABLE public.users OWNER TO postgres;
-
---
--- Data for Name: artikel; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.artikel (id, img_url, nama, category, teks) FROM stdin;
-1	https://picsum.photos/seed/art1/800/400	Cara Merawat Anak Kucing	Perawatan	Isi panduan singkat merawat anak kucing...
-2	https://picsum.photos/seed/art2/800/400	Makanan Sehat untuk Kucing	Makanan	Daftar makanan yang aman untuk kucing...
-\.
-
-
---
--- Data for Name: cat; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.cat (id, img_url, nama, age, gender, ras, karakteristik, isvaccinated, isadopted, adopter) FROM stdin;
-1	https://placekitten.com/300/300	 Milo	 2 tahun	 Male	 Domestic	 suka tidur dan dielus	 sudah	 belum	\N
-2	https://placekitten.com/301/300	 Luna	 1 tahun	 Female	 Anggora	 suka main bola	 sudah	 belum	\N
-3	https://placekitten.com/302/300	 Simba	 3 tahun	 Male	 Persia	 Tenang	 sudah	 belum	\N
-4	https://placekitten.com/303/300	 Nala	 4 bulan	 Female	 Domestic	 Protektif	 false	 belum	\N
-\.
-
-
---
--- Data for Name: donasi; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.donasi (id, nominal, pesan, metode, username) FROM stdin;
-1	50000	Donasi untuk perawatan kucing jalanan	1	catlover1
-2	100000	Untuk biaya steril dan vaksin	2	catlover2
-\.
-
-
---
--- Data for Name: laporan; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.laporan (id, category, lokasi, deskripsi, img_url, notes) FROM stdin;
-\.
-
-
---
--- Data for Name: metode; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.metode (id, nama) FROM stdin;
-1	BCA
-2	BRI
-3	BNI
-4	Mandiri
-5	CIMB Niaga
-6	Permata
-7	BSI
-8	Dana
-9	OVO
-10	GoPay
-11	ShopeePay
-\.
-
-
---
--- Data for Name: petplace; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.petplace (id, nama, category, img_url) FROM stdin;
-1	PetCare Clinic	Klinik	https://picsum.photos/seed/clinic/600/400
-2	Happy Pets Store	Toko Hewan	https://picsum.photos/seed/shop/600/400
-\.
-
-
---
--- Data for Name: posts; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.posts (id, teks, id_thread, username) FROM stdin;
-1	Sebaiknya tidak, banyak kucing intoleran laktosa.	1	catlover2
-2	Pakai sikat halus dan gunting kuku hati-hati.	2	admin
-3	Saya adopsi lewat shelter lokal; prosesnya cepat.	3	catlover1
-\.
-
-
---
--- Data for Name: shelter; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.shelter (id, nama, lokasi) FROM stdin;
-1	Meow Home Shelter	Jl. Kucing No.12, Bandung
-2	Paws Rescue Center	Jl. Penyelamat No.7, Jakarta
-\.
-
-
---
--- Data for Name: tanggungjawab; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.tanggungjawab (id, id_cat, gambarmakanan1, gambarmakanan2, gambarmakanan3, gambaraktivitas1, gambaraktivitas2, gambaraktivitas3, gambarkotoran1, gambarkotoran2, gambarkotoran3) FROM stdin;
-1	1	https://picsum.photos/id/101/400/300	https://picsum.photos/id/102/400/300	https://picsum.photos/id/103/400/300	https://picsum.photos/id/201/400/300	https://picsum.photos/id/202/400/300	https://picsum.photos/id/203/400/300	https://picsum.photos/id/301/400/300	https://picsum.photos/id/302/400/300	https://picsum.photos/id/303/400/300
-2	2	https://placekitten.com/400/300	https://placekitten.com/401/300	https://placekitten.com/402/300	https://placekitten.com/403/300	https://placekitten.com/404/300	https://placekitten.com/405/300	https://placekitten.com/406/300	https://placekitten.com/407/300	https://placekitten.com/408/300
-3	3	https://picsum.photos/id/110/400/300	https://picsum.photos/id/111/400/300	https://picsum.photos/id/112/400/300	https://picsum.photos/id/210/400/300	https://picsum.photos/id/211/400/300	https://picsum.photos/id/212/400/300	https://picsum.photos/id/310/400/300	https://picsum.photos/id/311/400/300	https://picsum.photos/id/312/400/300
-\.
-
-
---
--- Data for Name: threads; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.threads (id, nama, category, teks, username) FROM stdin;
-1	Bolehkah kucing minum susu sapi?	Kesehatan	Apakah aman memberi susu sapi ke kucing?	catlover1
-2	Cara grooming kucing di rumah	Perawatan	Ada tips grooming murah dan efektif?	catlover2
-3	Adopsi kucing: pengalaman	Adopsi	Ceritakan pengalaman adopsi kamu.	admin
-\.
-
-
---
--- Data for Name: tokoonline; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.tokoonline (id, deskripsi, notes) FROM stdin;
-1	Toko perlengkapan kucing online, jual makanan dan aksesoris.	Buka 09:00-18:00
-2	Marketplace barang hewan, pengiriman ke seluruh Indonesia.	Promo bebas ongkir
-\.
-
-
---
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.users (username, email, nama, phone, password, bio, img_url) FROM stdin;
-catlover1	lover1@mail.com	Reza Pratama	081234567890	hashedpass1	Pecinta kucing lokal	https://i.pravatar.cc/150?img=1
-catlover2	lover2@mail.com	Annisa Putri	082345678901	hashedpass2	Suka rescue kucing jalanan	https://i.pravatar.cc/150?img=2
-admin	admin@meow.com	Admin Meow	081298765432	hashedpass3	Administrator aplikasi	https://i.pravatar.cc/150?img=3
-pengguna_baru	kucing@contoh.com	Pencinta Kucing	081234567890	$2b$10$5tU8AjD7.LoWY2ymVPwmbetpfemWPlpMY9RWZRGZzgMUNAHuLxjLK	Saya suka memelihara kucing oren	default.png
-raffienanda	raffienanda@gmail.com	Raffie Arsy Ananda	0816604884	$2b$10$BQUL3HtALdwZSZ3WajHrf.rxiEZLOstY3xWOxDZjyICyU1hM5Ouq6	i love meng	default.png
-\.
 
 
 --
