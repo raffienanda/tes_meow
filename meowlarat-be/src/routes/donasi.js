@@ -17,6 +17,33 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 async function donasiRoutes(fastify, options) {
+  
+  // === TAMBAHKAN CODE INI (GET Route) ===
+  fastify.get('/', async (request, reply) => {
+    try {
+      // Ambil data donasi dari database, urutkan dari yang terbaru
+      const listDonasi = await prisma.donasi.findMany({
+        orderBy: { id: 'desc' },
+        include: {
+          metode_donasi_metodeTometode: true // Ambil nama bank/metode pembayaran
+        }
+      });
+
+      // Hitung total nominal semua donasi
+      const total = listDonasi.reduce((acc, curr) => acc + curr.nominal, 0);
+
+      return reply.send({ 
+        status: 'success', 
+        data: listDonasi, 
+        total: total 
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ message: 'Gagal mengambil data donasi' });
+    }
+  });
+  // ========================================
+
   fastify.post('/', async (request, reply) => {
     try {
       const parts = request.parts();
