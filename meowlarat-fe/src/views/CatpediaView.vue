@@ -15,7 +15,7 @@
 
       <div class="artikel-card populer">
         <div class="artikel-card-left">
-          <img :src="todaysArticle.img_url" alt="Kucing lucu" />
+          <img :src="getImgUrl(todaysArticle.img_url)" alt="Kucing lucu" />
         </div>
 
         <div class="artikel-card-right">
@@ -60,26 +60,38 @@
 import { ref, onMounted } from "vue";
 import Navbar from "../components/Navbar.vue";
 
-// Ubah dari array menjadi single object (null diawal)
 const todaysArticle = ref(null);
 const latestArticles = ref([]);
 const page = ref(1);
 const limit = 6;
+
+// --- PERBAIKAN 3: Fungsi Helper URL Gambar ---
+function getImgUrl(path) {
+  // 1. Jika path kosong/null, return placeholder
+  if (!path) return 'https://placehold.co/600x400?text=No+Image';
+  
+  // 2. Jika path sudah http (link luar/picsum), langsung pakai
+  if (path.startsWith('http')) return path;
+
+  // 3. Bersihkan path dari double slash atau backslash
+  let cleanPath = path.replace(/\\/g, '/');
+  // Hapus slash di depan jika ada (biar ga double //)
+  if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
+
+  // 4. Gabungkan dengan URL Backend
+  return `http://localhost:3000/uploads/img-artikel/${cleanPath}`;
+}
 
 async function fetchArticles() {
   try {
     const res = await fetch(`/api/artikel?page=${page.value}&limit=${limit}`);
     const json = await res.json();
 
-    // Logic untuk Artikel Hari Ini (Random Select)
-    // Hanya dijalankan saat load pertama (page 1) dan jika ada data
     if (page.value === 1 && json.data.length > 0) {
-      // Pilih index acak dari data yang tersedia
       const randomIndex = Math.floor(Math.random() * json.data.length);
       todaysArticle.value = json.data[randomIndex];
     }
 
-    // Masukkan data ke list artikel terbaru
     latestArticles.value.push(...json.data);
   } catch (error) {
     console.error("Gagal mengambil artikel:", error);
@@ -97,6 +109,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ... Style CSS TETAP SAMA seperti file aslimu ... */
 body {
   font-family: "Poppins", sans-serif;
   margin: 0;
@@ -177,7 +190,6 @@ body {
   padding: clamp(15px, 3vw, 25px);
 }
 
-/* Updated selector: Removed .artikel-image class requirement since HTML doesn't have it */
 .artikel-card-left img {
   width: 100%;
   height: 100%;
