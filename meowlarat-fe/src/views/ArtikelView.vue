@@ -72,7 +72,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue"; // 1. Tambahkan 'watch' disini
 import { useRoute } from "vue-router";
 import Navbar from "../components/Navbar.vue";
 
@@ -81,27 +81,21 @@ const artikel = ref({});
 const related = ref([]);
 const isError = ref(false);
 
-// --- PERBAIKAN: Fungsi Helper URL Gambar (Sama seperti di CatpediaView) ---
 function getImgUrl(path) {
-  // 1. Jika path kosong/null, return placeholder
   if (!path) return 'https://placehold.co/600x400?text=No+Image';
-  
-  // 2. Jika path sudah http (link luar/picsum), langsung pakai
   if (path.startsWith('http')) return path;
-
-  // 3. Bersihkan path dari double slash atau backslash
   let cleanPath = path.replace(/\\/g, '/');
-  // Hapus slash di depan jika ada (biar ga double //)
   if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
-
-  // 4. Gabungkan dengan URL Backend
   return `http://localhost:3000/uploads/img-artikel/${cleanPath}`;
 }
 
 async function loadArticle() {
-  const id = route.params.id;
+  // Pastikan mengambil ID terbaru dari route saat fungsi dipanggil
+  const id = route.params.id; 
 
   try {
+    // Reset error state sebelum fetch baru
+    isError.value = false; 
     const res = await fetch(`/api/artikel/${id}`);
 
     if (res.status === 404) {
@@ -116,18 +110,35 @@ async function loadArticle() {
 }
 
 async function loadRelated() {
-  const res = await fetch(`/api/artikel?limit=4`);
-  const json = await res.json();
+  try {
+    const res = await fetch(`/api/artikel?limit=4`);
+    const json = await res.json();
 
-  related.value = json.data
-    .filter((a) => a.id !== Number(route.params.id))
-    .slice(0, 3);
+    related.value = json.data
+      .filter((a) => a.id !== Number(route.params.id))
+      .slice(0, 3);
+  } catch (e) {
+    console.error("Gagal memuat artikel terkait", e);
+  }
 }
 
 onMounted(() => {
   loadArticle();
   loadRelated();
 });
+
+// 2. Tambahkan kode ini agar data berubah saat tombol diklik
+watch(
+  () => route.params.id,
+  (newId) => {
+    if (newId) {
+      loadArticle();
+      loadRelated();
+      // Opsional: Scroll ke atas saat pindah artikel
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+);
 </script>
 
 <style scoped>
