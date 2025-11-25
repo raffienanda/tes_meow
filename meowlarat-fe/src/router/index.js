@@ -13,6 +13,7 @@ import FindPlaceView from '@/views/FindPlaceView.vue'
 import FormView from '@/views/FormView.vue'
 import ForgotPassword from '@/views/ForgotPassword.vue'
 import ResetPassword from '@/views/ResetPassword.vue'
+import KebijakanPrivasiView from '@/views/KebijakanPrivasiView.vue'
 
 const routes = [
   {
@@ -92,7 +93,12 @@ const routes = [
     path: '/artikel/:id',
     name: 'ArtikelView',
     component: ArtikelView
-  }
+  },
+  {
+    path: '/kebijakan-privasi',
+    name: 'KebijakanPrivasi',
+    component: KebijakanPrivasiView
+  },
   
   // contoh rute tambahan:
   // {

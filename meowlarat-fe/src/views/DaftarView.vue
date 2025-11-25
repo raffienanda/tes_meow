@@ -18,7 +18,7 @@
 
           <label class="checkbox">
             <input type="checkbox" required />
-            Saya menyetujui <a href="#">kebijakan privasi</a>
+            Saya menyetujui <router-link to="/kebijakan-privasi" target="_blank">kebijakan privasi</router-link>
           </label>
 
           <button type="submit" class="register-btn" :disabled="isLoading">
