@@ -1,5 +1,6 @@
 <template>
-  <Navbar />
+  <NavbarLogin v-if="isLoggedIn" />
+  <Navbar v-else />
 
   <!-- Hero Section -->
   <section class="findplace-hero">
@@ -63,6 +64,16 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import Navbar from "../components/Navbar.vue";
+import NavbarLogin from '../components/NavbarLogin.vue';
+
+const isLoggedIn = ref(false);
+
+onMounted(() => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    isLoggedIn.value = true;
+  }
+});
 
 // import gambar lokal (contoh placeholder)
 import gerlongImg from "../assets/img/cat-icon.png";

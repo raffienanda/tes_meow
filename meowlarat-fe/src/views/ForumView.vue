@@ -1,6 +1,7 @@
 <template>
   <div class="forum-page-wrapper">
-    <Navbar /> 
+    <NavbarLogin v-if="isLoggedIn" />
+    <Navbar v-else />
 
     <main class="forum-layout-container">
       <aside class="forum-sidebar">
@@ -152,6 +153,16 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 import Navbar from '../components/Navbar.vue'; 
+import NavbarLogin from '../components/NavbarLogin.vue';
+
+const isLoggedIn = ref(false);
+
+onMounted(() => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    isLoggedIn.value = true;
+  }
+});
 
 const route = useRoute();
 

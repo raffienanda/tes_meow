@@ -1,6 +1,7 @@
 <template>
   <div>
-    <Navbar />
+    <NavbarLogin v-if="isLoggedIn" />
+    <Navbar v-else />
     <div class="lapor-page">
       <main class="lapor-content">
         <h1 class="page-title">Lapor</h1>
@@ -76,9 +77,19 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { reactive, ref,  onMounted } from 'vue';
 import Navbar from '../components/Navbar.vue'; 
 import axios from 'axios';
+import NavbarLogin from '../components/NavbarLogin.vue';
+
+const isLoggedIn = ref(false);
+
+onMounted(() => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    isLoggedIn.value = true;
+  }
+});
 
 const reportTypes = [
   'kucing hilang', 

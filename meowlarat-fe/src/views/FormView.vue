@@ -1,6 +1,7 @@
 <template>
   <div class="form-page">
-    <Navbar />
+    <NavbarLogin v-if="isLoggedIn" />
+    <Navbar v-else />
 
     <section class="container">
       <h1 class="title">Form Pemilik Bertanggungjawab</h1>
@@ -73,6 +74,16 @@ import Navbar from "@/components/Navbar.vue";
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { useRoute } from "vue-router";
+import NavbarLogin from '../components/NavbarLogin.vue';
+
+const isLoggedIn = ref(false);
+
+onMounted(() => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    isLoggedIn.value = true;
+  }
+});
 
 const route = useRoute();
 // Kita ambil ID kucing dari query parameter, misalnya /form?catId=1

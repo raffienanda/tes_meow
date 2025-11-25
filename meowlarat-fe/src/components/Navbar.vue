@@ -20,7 +20,6 @@
       <router-link to="/catpedia" class="nav-item" @click="closeMenu">CatPedia</router-link>
       <router-link to="/findplace" class="nav-item" @click="closeMenu">FindPlace</router-link>
       <router-link to="/forum" class="nav-item" @click="closeMenu">Forum</router-link>
-      <router-link to="/profil" class="nav-item" @click="closeMenu">Profil</router-link>
 
       <!-- Auth pindah ke bawah hanya di mode hamburger -->
       <div class="auth-mobile">

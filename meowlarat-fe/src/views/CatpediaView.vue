@@ -1,5 +1,6 @@
 <template>
-  <Navbar />
+  <NavbarLogin v-if="isLoggedIn" />
+  <Navbar v-else />
 
   <!-- Hero Section -->
   <section class="catpedia-hero">
@@ -60,6 +61,15 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import Navbar from "../components/Navbar.vue";
+import NavbarLogin from '../components/NavbarLogin.vue';
+const isLoggedIn = ref(false);
+
+onMounted(() => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    isLoggedIn.value = true;
+  }
+});
 
 const popularArticles = ref([]);
 const latestArticles = ref([]);

@@ -1,6 +1,7 @@
 <template>
   <div class="donasi-page">
-    <Navbar />
+    <NavbarLogin v-if="isLoggedIn" />
+    <Navbar v-else />
 
     <section class="donasi-container">
       <!-- Bagian kiri -->
@@ -108,7 +109,16 @@
 
 <script setup>
 import Navbar from '@/components/Navbar.vue'
-import { ref } from 'vue'
+import NavbarLogin from '../components/NavbarLogin.vue';
+import { ref, onMounted } from 'vue'
+const isLoggedIn = ref(false);
+
+onMounted(() => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    isLoggedIn.value = true;
+  }
+});
 
 const nominals = ['Rp10k', 'Rp50k', 'Rp100k', 'Rp200k', 'Rp500k', 'Rp1000k']
 const paymentMethods = ['E-Wallet', 'QR Code', 'Transfer Bank']
