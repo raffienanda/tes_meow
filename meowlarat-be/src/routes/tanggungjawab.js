@@ -1,20 +1,8 @@
-<<<<<<< HEAD
-// HAPUS: import { util } from 'zod'; (Sepertinya ini auto-import yang salah)
-import fs from 'fs';
-import path from 'path';
-import { pipeline } from 'stream';
-import { promisify } from 'util'; // Import promisify yang benar
-import { PrismaClient } from '@prisma/client';
-
-// DEFINISI PUMP YANG BENAR:
-const pump = promisify(pipeline); 
-=======
 import fs from 'fs';
 import path from 'path';
 import { pipeline } from 'stream/promises'; // ✅ FIX: Import langsung versi Promise (pengganti pump)
 import { PrismaClient } from '@prisma/client'; 
 
->>>>>>> be63846ff7140402183eb58ea045c9640987a551
 const prisma = new PrismaClient();
 
 async function tanggungjawabRoutes(fastify, options) {
