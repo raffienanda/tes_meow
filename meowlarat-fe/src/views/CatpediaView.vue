@@ -1,8 +1,6 @@
 <template>
-  <NavbarLogin v-if="isLoggedIn" />
-  <Navbar v-else />
+  <Navbar />
 
-  <!-- Hero Section -->
   <section class="catpedia-hero">
     <div class="hero-content">
       <h1><span>Cat</span>Pedia</h1>
@@ -10,117 +8,91 @@
     </div>
   </section>
 
-  <!-- Artikel Wrapper (satu kotak biru muda besar) -->
   <section class="artikel-wrapper">
-    <!-- Artikel Populer -->
-    <div class="artikel-populer" v-if="popularArticles.length">
-      <h2 class="section-title">Artikel Populer</h2>
-      <div class="artikel-populer" v-if="popularArticles.length">
-        <div
-          v-for="(article, index) in popularArticles"
-          :key="index"
-          class="artikel-card populer"
-        >
+
+    <div class="artikel-populer" v-if="todaysArticle">
+      <h2 class="section-title">Artikel Hari Ini</h2>
+
+      <div class="artikel-card populer">
         <div class="artikel-card-left">
-            <img src="../assets/img/cat-icon.png" alt="Kucing lucu" />
-          </div>
+          <img :src="todaysArticle.img_url" alt="Kucing lucu" />
+        </div>
+
         <div class="artikel-card-right">
-          <p class="artikel-kategori">{{ article.category }}</p>
-          <h3>{{ article.title }}</h3>
-          <p class="desc">{{ article.description }}</p>
-          <router-link :to="'/artikel/' + article.slug" class="readmore">
+          <p class="artikel-kategori">{{ todaysArticle.category }}</p>
+          <h3>{{ todaysArticle.nama }}</h3>
+          <p class="desc">{{ todaysArticle.teks_snippet }}</p>
+
+          <router-link :to="'/artikel/' + todaysArticle.id" class="readmore">
             Baca Selengkapnya →
           </router-link>
         </div>
-        </div>
       </div>
     </div>
-    <!-- Artikel Terbaru -->
+
     <div class="artikel-terbaru-section">
       <h2 class="section-title">Artikel Terbaru</h2>
+
       <div class="artikel-grid" v-if="latestArticles.length">
         <div
-          v-for="(article, index) in latestArticles"
-          :key="index"
+          v-for="article in latestArticles"
+          :key="article.id"
           class="artikel-card"
-          :class="article.colorClass"
+          :style="{ borderTop: '4px solid ' + article.color }"
         >
           <div class="artikel-kategori">{{ article.category }}</div>
-          <h3>{{ article.title }}</h3>
-          <p>{{ article.description }}</p>
-          <router-link :to="'/artikel/' + article.slug" class="readmore">
+          <h3>{{ article.nama }}</h3>
+          <p>{{ article.teks_snippet }}</p>
+
+          <router-link :to="'/artikel/' + article.id" class="readmore">
             Baca Selengkapnya →
           </router-link>
         </div>
       </div>
-      <button class="load-more">Lebih Banyak</button>
+
+      <button class="load-more" @click="loadMore">Lebih Banyak</button>
     </div>
+
   </section>
 </template>
 
 <script setup>
 import { ref, onMounted } from "vue";
 import Navbar from "../components/Navbar.vue";
-import NavbarLogin from '../components/NavbarLogin.vue';
-const isLoggedIn = ref(false);
+
+// Ubah dari array menjadi single object (null diawal)
+const todaysArticle = ref(null);
+const latestArticles = ref([]);
+const page = ref(1);
+const limit = 6;
+
+async function fetchArticles() {
+  try {
+    const res = await fetch(`/api/artikel?page=${page.value}&limit=${limit}`);
+    const json = await res.json();
+
+    // Logic untuk Artikel Hari Ini (Random Select)
+    // Hanya dijalankan saat load pertama (page 1) dan jika ada data
+    if (page.value === 1 && json.data.length > 0) {
+      // Pilih index acak dari data yang tersedia
+      const randomIndex = Math.floor(Math.random() * json.data.length);
+      todaysArticle.value = json.data[randomIndex];
+    }
+
+    // Masukkan data ke list artikel terbaru
+    latestArticles.value.push(...json.data);
+  } catch (error) {
+    console.error("Gagal mengambil artikel:", error);
+  }
+}
+
+function loadMore() {
+  page.value++;
+  fetchArticles();
+}
 
 onMounted(() => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    isLoggedIn.value = true;
-  }
-});
-
-const popularArticles = ref([]);
-const latestArticles = ref([]);
-
-onMounted(async () => {
-  popularArticles.value = [
-    {
-      category: "KESEHATAN & POPULASI",
-      title: "Mengapa Program TNR Penting untuk Kucing Liar?",
-      description:
-        "Program Trap-Neuter-Return (TNR) adalah metode yang paling manusiawi dan efektif untuk mengelola populasi kucing liar.",
-      slug: "program-tnr-kucing-liar",
-      image: new URL("../assets/img/cat-icon.png", import.meta.url).href,
-
-    },
-  ];
-
-  latestArticles.value = [
-    {
-      category: "KESEHATAN",
-      title: "Mengenali Gejala Awal FIV dan Pencegahannya",
-      description:
-        "Virus FIV sering luput dari perhatian. Ketahui tanda-tanda yang harus diwaspadai dan langkah proaktif.",
-      slug: "gejala-fiv-pencegahan",
-      colorClass: "red-border",
-    },
-    {
-      category: "PERAWATAN",
-      title: "Panduan Grooming Dasar untuk Kucing Rumahan",
-      description:
-        "Tips mudah memandikan, menyikat bulu, dan memotong kuku kucing tanpa membuatnya stres.",
-      slug: "panduan-grooming-kucing",
-      colorClass: "purple-border",
-    },
-    {
-      category: "PERILAKU",
-      title: "Cara Mengatasi Agresivitas Mendadak pada Kucing",
-      description:
-        "Jika kucing Anda tiba-tiba menjadi agresif, itu bisa jadi pertanda masalah kesehatan atau lingkungan.",
-      slug: "mengatasi-agresivitas-kucing",
-      colorClass: "orange-border",
-    },
-    {
-      category: "NUTRISI",
-      title: "Memilih Makanan Basah vs. Kering: Mana yang Terbaik?",
-      description:
-        "Perdebatan klasik: dry food atau wet food? Kami mengupas tuntas manfaat dan kekurangan masing-masing.",
-      slug: "makanan-basah-vs-kering",
-      colorClass: "green-border",
-    },
-  ];
+  fetchArticles();
 });
 </script>
 
@@ -131,26 +103,13 @@ body {
   background-color: #e5f2ff;
   color: #002b5b;
 }
-
 /* Hero Section */
 .catpedia-hero {
-
-  
   border-radius: 20px;
   padding: clamp(25px, 5vw, 50px);
   width: 90%;
   max-width: 1150px;
-  margin: clamp(-30px, -5vw, -60px) auto 60px
-  
-  /* padding: clamp(40px, 8vw, 80px) clamp(20px, 8vw, 100px);
-  max-width: 1150px;
-
-  color: #fffce8;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0; */
+  margin: clamp(-30px, -5vw, -60px) auto 60px;
 }
 
 .hero-content {
@@ -214,11 +173,12 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #a7f3e6;
+  background-color: hsl(165, 100%, 94%);
   padding: clamp(15px, 3vw, 25px);
 }
 
-.artikel-card-left img.artikel-image {
+/* Updated selector: Removed .artikel-image class requirement since HTML doesn't have it */
+.artikel-card-left img {
   width: 100%;
   height: 100%;
   max-height: 250px;
@@ -287,20 +247,6 @@ body {
 
 .load-more:hover {
   background-color: #005b99;
-}
-
-/* Category Borders */
-.red-border {
-  border-top: 4px solid #ff4d4d;
-}
-.purple-border {
-  border-top: 4px solid #c77dff;
-}
-.orange-border {
-  border-top: 4px solid #ffa54d;
-}
-.green-border {
-  border-top: 4px solid #52d17a;
 }
 
 /* Responsive */

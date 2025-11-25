@@ -6,6 +6,7 @@ import LaporView from '@/views/LaporView.vue'
 import ProfilView from '@/views/ProfilView.vue'
 import AdopsiView from '@/views/AdopsiView.vue'
 import CatpediaView from '@/views/CatpediaView.vue'
+import ArtikelView from '@/views/ArtikelView.vue'
 import ForumView from '@/views/ForumView.vue'
 import DonasiView from '@/views/DonasiView.vue'
 import FindPlaceView from '@/views/FindPlaceView.vue'
@@ -86,6 +87,11 @@ const routes = [
     path: '/reset-password',
     name: 'ResetPassword',
     component: ResetPassword
+  },
+  {
+    path: '/artikel/:id',
+    name: 'ArtikelView',
+    component: ArtikelView
   }
   
   // contoh rute tambahan:
