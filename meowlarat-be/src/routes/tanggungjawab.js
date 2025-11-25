@@ -3,51 +3,47 @@ import fs from 'fs';
 import path from 'path';
 import { pipeline } from 'stream';
 import utilPromisify from 'util';
+import { PrismaClient } from '@prisma/client'; 
+
 const pump = utilPromisify.pipeline;
+const prisma = new PrismaClient();
 
 async function tanggungjawabRoutes(fastify, options) {
-  const { prisma } = fastify;
 
   // GET: Ambil status form berdasarkan ID Kucing
   fastify.get('/:catId', async (request, reply) => {
     const { catId } = request.params;
     
-    // 1. Cari data kucing untuk cek tanggal adopsi
     const cat = await prisma.cat.findUnique({
       where: { id: parseInt(catId) },
-      include: { tanggungjawab: true } // Ambil data laporan yang sudah ada
+      include: { tanggungjawab: true } 
     });
 
     if (!cat || !cat.adoptdate) {
       return reply.status(404).send({ message: 'Kucing belum diadopsi atau tidak ditemukan' });
     }
 
-    // 2. Hitung selisih hari dari tanggal adopsi sampai sekarang
     const today = new Date();
     const adoptDate = new Date(cat.adoptdate);
     const diffTime = Math.abs(today - adoptDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
 
-    // 3. Cek data yang sudah diisi
-    const report = cat.tanggungjawab[0] || {}; // Asumsi 1 kucing 1 record tanggungjawab
-
-    // 4. Tentukan status Lock
-    // Minggu 1: Selalu terbuka setelah adopsi
-    // Minggu 2: Terbuka jika > 7 hari DAN Minggu 1 sudah diisi (opsional: cek salah satu field)
-    // Minggu 3: Terbuka jika > 14 hari DAN Minggu 2 sudah diisi
-
-    const isWeek1Done = report.gambarmakanan1 && report.gambaraktivitas1 && report.gambarkotoran1;
-    const isWeek2Done = report.gambarmakanan2 && report.gambaraktivitas2 && report.gambarkotoran2;
+    const report = cat.tanggungjawab[0] || {};
 
     return {
       catName: cat.nama,
+      catImage: cat.img_url,
       adoptDate: cat.adoptdate,
       daysAdopted: diffDays,
       data: report,
       locks: {
-        week1: false, // Selalu terbuka
-        week2: diffDays < 7, // Terkunci jika belum 7 hari
-        week3: diffDays < 14 // Terkunci jika belum 14 hari
+        // REVISI LOGIKA LOCK:
+        // Hanya kunci jika "BELUM WAKTUNYA". 
+        // Jika sudah lewat (expired), biarkan terbuka (false) agar bisa dilihat isinya.
+        
+        week1: false, // Minggu 1 selalu terbuka sejak awal
+        week2: diffDays < 8, // Terkunci sebelum hari ke-8
+        week3: diffDays < 15 // Terkunci sebelum hari ke-15
       }
     };
   });
@@ -58,45 +54,58 @@ async function tanggungjawabRoutes(fastify, options) {
     const parts = request.parts();
     
     let updateData = {};
+    
+    const folderName = 'img-tanggungjawab';
+    const uploadDir = path.join(process.cwd(), 'uploads', folderName);
+    if (!fs.existsSync(uploadDir)){
+        fs.mkdirSync(uploadDir, { recursive: true });
+    }
 
-    for await (const part of parts) {
-      if (part.file) {
-        // Simpan file gambar
-        const filename = `tj-${catId}-w${weekNum}-${part.fieldname}-${Date.now()}${path.extname(part.filename)}`;
-        const savePath = path.join(process.cwd(), 'uploads', 'img-lapor', filename); // Simpan di folder uploads
-        
-        // Pastikan folder ada (opsional, biasanya sudah dibuat manual)
-        await pump(part.file, fs.createWriteStream(savePath));
+    try {
+      for await (const part of parts) {
+        if (part.file) {
+          let ext = path.extname(part.filename);
+          if (!ext || ext === '') {
+            if (part.mimetype === 'image/jpeg') ext = '.jpg';
+            else if (part.mimetype === 'image/png') ext = '.png';
+            else if (part.mimetype === 'image/webp') ext = '.webp';
+            else ext = '.jpg';
+          }
 
-        // Mapping fieldname frontend ke database column
-        // Frontend kirim field: 'makanan', 'aktivitas', 'kotoran'
-        // Database: gambarmakanan1, gambaraktivitas1, dll.
-        const dbColumn = `gambar${part.fieldname}${weekNum}`; 
-        updateData[dbColumn] = `/uploads/img-lapor/${filename}`;
+          const filename = `tj-${catId}-w${weekNum}-${part.fieldname}-${Date.now()}${ext}`;
+          const savePath = path.join(uploadDir, filename);
+          
+          await pump(part.file, fs.createWriteStream(savePath));
+
+          const dbColumn = `gambar${part.fieldname}${weekNum}`; 
+          updateData[dbColumn] = `/uploads/${folderName}/${filename}`;
+        }
       }
+
+      const existing = await prisma.tanggungjawab.findFirst({
+          where: { id_cat: parseInt(catId) }
+      });
+
+      if (existing) {
+          await prisma.tanggungjawab.update({
+              where: { id: existing.id },
+              data: updateData
+          });
+      } else {
+          await prisma.tanggungjawab.create({
+              data: {
+                  id_cat: parseInt(catId),
+                  ...updateData
+              }
+          });
+      }
+
+      return { status: 'success', message: `Laporan Minggu ${weekNum} berhasil disimpan` };
+
+    } catch (error) {
+      console.error("Error Upload:", error);
+      return reply.code(500).send({ message: 'Gagal menyimpan laporan', error: error.message });
     }
-
-    // Update atau Create record tanggungjawab
-    // Kita cari dulu apakah sudah ada recordnya
-    const existing = await prisma.tanggungjawab.findFirst({
-        where: { id_cat: parseInt(catId) }
-    });
-
-    if (existing) {
-        await prisma.tanggungjawab.update({
-            where: { id: existing.id },
-            data: updateData
-        });
-    } else {
-        await prisma.tanggungjawab.create({
-            data: {
-                id_cat: parseInt(catId),
-                ...updateData
-            }
-        });
-    }
-
-    return { status: 'success', message: `Laporan Minggu ${weekNum} berhasil disimpan` };
   });
 }
 
