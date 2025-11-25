@@ -82,7 +82,8 @@
               <p>Umur : {{ history.age }}</p>
               <p>Tanggal Adopsi : {{ history.dob }}</p>
               <p>Diadopsi Selama : {{ history.duration }}</p>
-              <router-link to="/form" class="form-btn">Form</router-link>
+              <router-link 
+        :to="{ path: '/form', query: { catId: history.id } }" class="form-btn">Form</router-link>
             </div>
           </div>
         </div>
@@ -271,6 +272,7 @@ export default {
           }
 
           return {
+            id: cat.id,
             name: cat.nama,
             age: cat.age,
             dob: cat.adoptdate ? new Date(cat.adoptdate).toLocaleDateString('id-ID') : '-', 
