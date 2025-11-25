@@ -1,11 +1,12 @@
-import { util } from 'zod';
+// HAPUS: import { util } from 'zod'; (Sepertinya ini auto-import yang salah)
 import fs from 'fs';
 import path from 'path';
 import { pipeline } from 'stream';
-import utilPromisify from 'util';
-import { PrismaClient } from '@prisma/client'; 
+import { promisify } from 'util'; // Import promisify yang benar
+import { PrismaClient } from '@prisma/client';
 
-const pump = utilPromisify.pipeline;
+// DEFINISI PUMP YANG BENAR:
+const pump = promisify(pipeline); 
 const prisma = new PrismaClient();
 
 async function tanggungjawabRoutes(fastify, options) {
