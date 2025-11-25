@@ -89,6 +89,44 @@
       </div>
     </section>
 
+    <section class="history-section">
+      <h2>Riwayat & Total Donasi</h2>
+      <div class="table-wrapper">
+        <table class="donation-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nama Donatur</th>
+              <th>Metode</th>
+              <th>Pesan</th>
+              <th class="text-right">Nominal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="historyList.length === 0">
+              <td colspan="5" class="text-center">Belum ada donasi masuk. Jadilah yang pertama!</td>
+            </tr>
+            <tr v-for="(item, index) in historyList" :key="item.id">
+              <td>{{ index + 1 }}</td>
+              <td>{{ item.username }}</td>
+              <td>
+                <span class="method-badge">
+                  {{ item.metode_donasi_metodeTometode ? item.metode_donasi_metodeTometode.nama : '-' }}
+                </span>
+              </td>
+              <td class="pesan-cell">"{{ item.pesan }}"</td>
+              <td class="text-right nominal-cell">Rp {{ formatRupiah(item.nominal) }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4" class="text-right label-total">Total Terkumpul</td>
+              <td class="text-right value-total">Rp {{ formatRupiah(grandTotal) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
     <div v-if="showPopup" class="popup-overlay" @click.self="closePopup">
       <div class="popup">
         <button class="close-btn" @click="closePopup">✕</button>
@@ -148,6 +186,11 @@ const categories = ['Transfer Bank', 'QR Code', 'E-Wallet'];
 // State Data dari Database
 const allMethods = ref([]);
 
+// --- STATE BARU UNTUK TABEL ---
+const historyList = ref([]);
+const grandTotal = ref(0);
+// ------------------------------
+
 // State UI
 const selectedCategory = ref(''); 
 const selectedMethodName = ref('');
@@ -165,6 +208,11 @@ const showPopup = ref(false);
 const showSuccessPopup = ref(false);
 const isLoading = ref(false);
 
+// Helper Format Rupiah
+function formatRupiah(num) {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
 // Fetch Data Payment Methods dari Backend
 const fetchMethods = async () => {
   try {
@@ -175,8 +223,22 @@ const fetchMethods = async () => {
   }
 };
 
+// --- FUNGSI BARU FETCH DATA DONASI ---
+const fetchHistory = async () => {
+  try {
+    const response = await axios.get('http://localhost:3000/api/donasi');
+    historyList.value = response.data.data;
+    grandTotal.value = response.data.total;
+  } catch (error) {
+    console.error("Gagal ambil history donasi:", error);
+  }
+};
+// -------------------------------------
+
 onMounted(() => {
-  fetchMethods(); // Ambil data saat load
+  fetchMethods(); 
+  fetchHistory(); // <--- PANGGIL DI SINI AGAR MUNCUL SAAT LOAD
+  
   const token = localStorage.getItem('token');
   if (token) {
     isLoggedIn.value = true;
@@ -194,33 +256,28 @@ const filteredMethods = computed(() => {
   return allMethods.value.filter(m => m.category === selectedCategory.value);
 });
 
-// Cek apakah kategori kosong/tidak ada yang aktif (untuk label 'Soon' di tombol utama)
+// Cek apakah kategori kosong/tidak ada yang aktif
 function isCategoryEmpty(catName) {
-  // Cek apakah ada item di kategori ini yang isActive = true
   const hasActive = allMethods.value.some(m => m.category === catName && m.isActive);
   return !hasActive; 
 }
 
 function openPaymentCategory(catName) {
-  if (isCategoryEmpty(catName)) return; // Jangan buka jika tidak ada metode aktif
+  if (isCategoryEmpty(catName)) return; 
 
   selectedCategory.value = catName;
-  
-  // Reset pilihan
   selectedMethodName.value = '';
   selectedMethodId.value = null;
   selectedBankInfo.value = null;
   showQrisBox.value = false;
 
   if (catName === 'QR Code') {
-    // Jika QR Code, cari data QRIS di list dan otomatis pilih
     const qrisMethod = allMethods.value.find(m => m.category === 'QR Code' && m.isActive);
     if (qrisMethod) {
       selectMethod(qrisMethod);
       showQrisBox.value = true;
     }
   } else {
-    // Jika Bank/E-wallet buka popup
     showPopup.value = true;
   }
 }
@@ -230,7 +287,7 @@ function selectMethod(method) {
 
   selectedMethodName.value = method.nama;
   selectedMethodId.value = method.id;
-  selectedLogo.value = method.logo; // <--- TAMBAHKAN INI (Simpan nama file gambar)
+  selectedLogo.value = method.logo; 
   
   if (method.rek && method.an) {
     selectedBankInfo.value = {
@@ -292,6 +349,7 @@ async function submitDonasi() {
     });
 
     showSuccessPopup.value = true;
+    fetchHistory(); // <--- REFRESH TABEL SETELAH SUKSES
   } catch (error) {
     console.error(error);
     alert("Gagal mengirim donasi. Coba lagi.");
@@ -307,8 +365,6 @@ function finishDonation() {
 </script>
 
 <style scoped>
-/* CSS Sama persis dengan sebelumnya, 
-   Hanya pastikan path gambar di HTML di atas sesuai */
 .donasi-container {
   display: flex;
   justify-content: center;
@@ -550,8 +606,87 @@ textarea { height: 80px; resize: none; }
   cursor: pointer;
 }
 
+/* === CSS TAMBAHAN UNTUK TABEL === */
+.history-section {
+  padding: 0 50px 80px 50px;
+  color: #fff;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.history-section h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #fffce8;
+}
+
+.table-wrapper {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow-x: auto;
+}
+
+.donation-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #e0e0e0;
+}
+
+.donation-table th, .donation-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.donation-table th {
+  color: #f7ca00;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+
+.method-badge {
+  background: rgba(0, 119, 194, 0.3);
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(0, 119, 194, 0.5);
+}
+
+.pesan-cell {
+  font-style: italic;
+  color: #aaa;
+  max-width: 250px;
+}
+
+.nominal-cell {
+  font-weight: bold;
+  color: #fff;
+}
+
+.donation-table tfoot tr {
+  background: rgba(247, 202, 0, 0.1);
+}
+
+.donation-table tfoot td {
+  border-bottom: none;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.label-total { font-weight: bold; color: #fffce8; }
+.value-total { font-weight: bold; color: #f7ca00; font-size: 1.3rem; }
+
 @media (max-width: 768px) {
   .donasi-container { flex-direction: column; padding: 40px 20px; }
   .bank-grid { grid-template-columns: repeat(2, 1fr); }
+  .history-section { padding: 0 20px 40px 20px; }
+  .pesan-cell { display: none; } 
 }
 </style>
