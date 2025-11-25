@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
 // Import Routes
+import artikelRoutes from './routes/artikel.js';
 import authRoutes from './routes/auth.js';
 import catRoutes from './routes/cats.js';
 import forumRoutes from './routes/forum.js';
@@ -48,6 +49,7 @@ fastify.register(fastifyStatic, {
 });
 
 // 4. Registrasi Routes
+fastify.register(artikelRoutes, { prefix: '/api' });
 fastify.register(authRoutes, { prefix: '/api/auth' });
 fastify.register(catRoutes, { prefix: '/api/cats' });
 fastify.register(forumRoutes, { prefix: '/api/forum' });
