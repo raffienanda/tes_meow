@@ -29,7 +29,7 @@ function stripHtml(html) {
 async function artikelRoutes(fastify, options) {
   // GET /artikel
   // Query params: ?q=search&page=1&limit=10&category=...
-  fastify.get('/artikel', async (request, reply) => {
+  fastify.get('/', async (request, reply) => {
     try {
       const { q, page = 1, limit = 12, category } = request.query || {};
       const take = Number(limit) || 12;
@@ -86,7 +86,7 @@ async function artikelRoutes(fastify, options) {
   });
 
   // GET /artikel/:id  <-- slug uses the article id (as requested)
-  fastify.get('/artikel/:id', async (request, reply) => {
+  fastify.get('/:id', async (request, reply) => {
     try {
       const id = Number(request.params.id);
       if (Number.isNaN(id)) return reply.code(400).send({ message: 'ID artikel tidak valid' });
@@ -111,8 +111,8 @@ async function artikelRoutes(fastify, options) {
     }
   });
 
-  // OPTIONAL: POST /artikel (admin)
-  fastify.post('/artikel', async (request, reply) => {
+  // HAPUS!! GAJADII!!! POST /artikel (admin)
+  fastify.post('/', async (request, reply) => {
     try {
       const { img_url, nama, category, teks } = request.body || {};
 

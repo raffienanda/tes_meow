@@ -71,10 +71,15 @@ model metode {
 }
 
 model petplace {
-  id       Int    @id @default(autoincrement())
-  nama     String @db.VarChar(255)
-  category String @db.VarChar(255)
-  img_url  String @db.VarChar(255)
+  id          Int     @id @default(autoincrement())
+  nama        String  @db.VarChar(255)
+  category    String  @db.VarChar(255) // Contoh: "Petshop", "Vet", "Grooming"
+  img_url     String  @db.VarChar(255)
+  address     String  @db.Text         // Alamat lengkap
+  latitude    Float   // Koordinat Y (misal: -6.9175)
+  longitude   Float   // Koordinat X (misal: 107.6191)
+  rating      Int     @default(5)      // Rating 1-5
+  description String? @db.Text         // Deskripsi singkat
 }
 
 model posts {
@@ -118,9 +123,12 @@ model threads {
 }
 
 model tokoonline {
-  id        Int    @id @default(autoincrement())
-  deskripsi String
-  notes     String
+  id        Int     @id @default(autoincrement())
+  source    String  @db.VarChar(50)   // Contoh: "SHOPEE", "TOKOPEDIA"
+  nama      String  @db.VarChar(255)  // Contoh: "Petshop Murah"
+  deskripsi String  @db.Text          // Deskripsi singkat
+  link      String  @db.Text          // Link menuju toko
+  notes     String? @db.Text          // Opsional (catatan tambahan)
 }
 
 model users {

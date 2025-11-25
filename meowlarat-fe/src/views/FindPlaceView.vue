@@ -2,7 +2,6 @@
   <NavbarLogin v-if="isLoggedIn" />
   <Navbar v-else />
 
-  <!-- Hero Section -->
   <section class="findplace-hero">
     <div class="container">
       <h1><span>Find</span>Place</h1>
@@ -10,15 +9,11 @@
     </div>
   </section>
 
-  <!-- Lokasi Petshop & Vet -->
   <section class="findplace-section">
     <h2 class="section-title">Lokasi Petshop & Vet</h2>
-    <div class="map-placeholder">
-      <p>Peta akan ditampilkan di sini...</p>
-    </div>
+    <div ref="mapContainer" class="map-placeholder" id="map"></div>
   </section>
 
-  <!-- Rekomendasi Petshop & Vet -->
   <section class="findplace-section">
     <div class="section-header">
       <h2 class="section-title">Rekomendasi Petshop & Vet</h2>
@@ -30,17 +25,16 @@
 
     <div ref="petshopsCarousel" class="carousel-track">
       <div v-for="(shop, index) in petshops" :key="index" class="place-card">
-        <img :src="shop.image" :alt="shop.name" />
-        <h3>{{ shop.name }}</h3>
+        <img :src="shop.img_url || defaultImg" :alt="shop.nama" />
+        <h3>{{ shop.nama }}</h3>
         <p class="address">{{ shop.address }}</p>
         <div class="stars">
-          <span v-for="star in shop.rating" :key="star">⭐</span>
+          <span v-for="n in shop.rating || 5" :key="n">⭐</span>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Rekomendasi Petshop Online -->
   <section class="findplace-section">
     <div class="section-header">
       <h2 class="section-title">Rekomendasi Petshop Online</h2>
@@ -54,7 +48,7 @@
       <div v-for="(shop, index) in onlineShops" :key="index" class="place-card online">
         <div class="shop-source">{{ shop.source }}</div>
         <h3>{{ shop.name }}</h3>
-        <p>{{ shop.description }}</p>
+        <p>{{ shop.deskripsi }}</p>
         <a :href="shop.link" target="_blank" class="visit-btn">Kunjungi Toko</a>
       </div>
     </div>
@@ -65,87 +59,96 @@
 import { ref, onMounted } from "vue";
 import Navbar from "../components/Navbar.vue";
 import NavbarLogin from '../components/NavbarLogin.vue';
+import defaultImg from "../assets/img/cat-icon.png"; 
+
+// --- LEAFLET & FIX ICON ---
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// Fix icon marker yang sering hilang di Vue/Vite
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+
+const DefaultIcon = L.icon({
+    iconUrl: iconUrl,
+    iconRetinaUrl: iconRetinaUrl,
+    shadowUrl: shadowUrl,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
+// ---------------------------
 
 const isLoggedIn = ref(false);
+const petshops = ref([]); 
+const onlineShops = ref([]); 
+const mapContainer = ref(null);
+const map = ref(null);
 
-onMounted(() => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    isLoggedIn.value = true;
-  }
-});
-
-// import gambar lokal (contoh placeholder)
-import gerlongImg from "../assets/img/cat-icon.png";
-import ozoraImg from "../assets/img/cat-icon.png";
-import cimuImg from "../assets/img/cat-icon.png";
-import careImg from "../assets/img/cat-icon.png";
-
+// Carousel Refs
 const petshopsCarousel = ref(null);
 const onlineCarousel = ref(null);
 
-const petshops = ref([]);
-const onlineShops = ref([]);
-
-// 🧩 Dummy data — nanti bisa diganti axios call ke DB
-onMounted(() => {
-  petshops.value = [
-    {
-      name: "Gerlong Petshop",
-      image: gerlongImg,
-      address: "Jl. Gegerkalong Hilir No. 51, Parongpong",
-      rating: 5,
-    },
-    {
-      name: "Klinik Hewan Ozora",
-      image: ozoraImg,
-      address: "Jl. Setrasari III Ruko 2C, Sukarasa",
-      rating: 5,
-    },
-    {
-      name: "Cimu PetShop",
-      image: cimuImg,
-      address: "Jl. Ciwaruga No. 28, Parongpong",
-      rating: 5,
-    },
-    {
-      name: "Pets & Care Bandung",
-      image: careImg,
-      address: "Jl. Sukajadi No. 40",
-      rating: 4,
-    },
-  ];
-
-  onlineShops.value = [
-    {
-      source: "SHOPEE.CO.ID",
-      name: "Toko Kucing Gemoy",
-      description:
-        "Menjual perlengkapan grooming dan makanan dengan harga terjangkau.",
-      link: "https://shopee.co.id",
-    },
-    {
-      source: "PETCARE.ID",
-      name: "MeongCare",
-      description:
-        "Menjual produk kesehatan dan perawatan premium dari dokter hewan.",
-      link: "https://petcare.id",
-    },
-    {
-      source: "TOKOPEDIA.COM",
-      name: "CatLovers Store",
-      description: "Makanan dan vitamin favorit untuk hewan peliharaan kamu!",
-      link: "https://tokopedia.com",
-    },
-  ];
-});
-
 const scrollCarousel = (type, direction) => {
-  const carousel =
-    type === "petshops" ? petshopsCarousel.value : onlineCarousel.value;
-  const scrollAmount = carousel.offsetWidth * 0.8;
-  carousel.scrollBy({ left: direction * scrollAmount, behavior: "smooth" });
+  const carousel = type === "petshops" ? petshopsCarousel.value : onlineCarousel.value;
+  if(carousel) {
+      const scrollAmount = carousel.offsetWidth * 0.8;
+      carousel.scrollBy({ left: direction * scrollAmount, behavior: "smooth" });
+  }
 };
+
+onMounted(async () => {
+  // 1. Cek Login
+  const token = localStorage.getItem('token');
+  if (token) isLoggedIn.value = true;
+
+  // 2. Inisialisasi Map (Bandung)
+  if (mapContainer.value) {
+    map.value = L.map(mapContainer.value).setView([-6.9175, 107.6191], 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(map.value);
+  }
+
+  // 3. Fetch Data Fisik (Peta)
+  try {
+    const resMap = await fetch('http://localhost:3000/api/findplace');
+    if (resMap.ok) {
+        const dataMap = await resMap.json();
+        petshops.value = dataMap;
+
+        // Render Marker ke Peta
+        dataMap.forEach((place) => {
+          if (place.latitude && place.longitude) {
+            L.marker([place.latitude, place.longitude])
+              .addTo(map.value)
+              .bindPopup(`
+                <b>${place.nama}</b><br>
+                ${place.address}<br>
+                <small>${place.category}</small>
+              `);
+          }
+        });
+    }
+  } catch (error) {
+    console.error("Gagal ambil data map:", error);
+  }
+
+  // 4. Fetch Data Online Shop (Dinamis dari DB)
+  try {
+    const resOnline = await fetch('http://localhost:3000/api/findplace/online');
+    if (resOnline.ok) {
+        onlineShops.value = await resOnline.json();
+    }
+  } catch (error) {
+    console.error("Gagal ambil data online shop:", error);
+    // Fallback jika error fetch
+    onlineShops.value = [];
+  }
+});
 </script>
 
 <style scoped>
@@ -153,6 +156,16 @@ body {
   font-family: "Poppins", sans-serif;
   background-color: #e5f2ff;
   color: #002b5b;
+}
+
+.map-placeholder {
+  height: 400px; /* Increased slightly for better view */
+  width: 100%;
+  border-radius: 15px;
+  z-index: 1; /* Ensures map controls sit correctly */
+  /* Remove display:flex/justify-center from previous placeholder styling 
+     so Leaflet can render tiles correctly */
+  display: block; 
 }
 
 /* Hero Section */
