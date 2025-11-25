@@ -38,6 +38,9 @@ model donasi {
   pesan                        String
   metode                       Int
   username                     String @db.VarChar(255)
+  bukti_transfer               String? @db.VarChar(255) // <--- TAMBAHKAN INI
+  
+  // Relasi
   metode_donasi_metodeTometode metode @relation("donasi_metodeTometode", fields: [metode], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users                        users  @relation(fields: [username], references: [username], onDelete: NoAction, onUpdate: NoAction)
 }
@@ -52,8 +55,18 @@ model laporan {
 }
 
 model metode {
-  id                           Int      @id @default(autoincrement())
-  nama                         String   @db.VarChar(255)
+  id        Int      @id @default(autoincrement())
+  nama      String   @db.VarChar(255)
+  
+  // TAMBAHKAN @default("Transfer Bank") DI SINI:
+  category  String   @db.VarChar(255) @default("Transfer Bank") 
+  
+  logo      String?  @db.VarChar(255)
+  rek       String?  @db.VarChar(255)
+  an        String?  @db.VarChar(255)
+  isActive  Boolean  @default(true)
+
+  // Relasi
   donasi_donasi_metodeTometode donasi[] @relation("donasi_metodeTometode")
 }
 

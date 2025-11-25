@@ -14,7 +14,7 @@
       </div>
       <div class="adoption-count">
         <p>Hitung Adopsi</p>
-        <h1>01</h1>
+        <h1>{{ adoptionCount < 10 ? '0' + adoptionCount : adoptionCount }}</h1>
       </div>
     </div>
 

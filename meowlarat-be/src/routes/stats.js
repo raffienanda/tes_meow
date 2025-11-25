@@ -1,3 +1,5 @@
+// meowlarat-be/src/routes/stats.js
+
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
@@ -5,14 +7,14 @@ async function statsRoutes(fastify, options) {
   
   fastify.get('/', async (request, reply) => {
     try {
-      // 1. Hitung Kucing Tersedia (isAdopted: 'false')
+      // 1. Hitung Kucing Tersedia (Hapus tanda kutip pada false)
       const availableCats = await prisma.cat.count({
-        where: { isAdopted: 'false' }
+        where: { isAdopted: false } 
       });
 
-      // 2. Hitung Kucing Sudah Diadopsi (isAdopted: 'true')
+      // 2. Hitung Kucing Sudah Diadopsi (Hapus tanda kutip pada true)
       const adoptedCats = await prisma.cat.count({
-        where: { isAdopted: 'true' }
+        where: { isAdopted: true }
       });
 
       // 3. Hitung Jumlah Shelter
