@@ -16,6 +16,8 @@ import forumRoutes from './routes/forum.js';
 import statsRoutes from './routes/stats.js';
 import laporRoutes from './routes/lapor.js';
 import tanggungjawabRoutes from './routes/tanggungjawab.js';
+import donasiRoutes from './routes/donasi.js';
+import metodeRoutes from './routes/metode.js';
 
 dotenv.config();
 
@@ -24,10 +26,9 @@ const __dirname = path.dirname(__filename);
 
 const fastify = Fastify({ logger: true });
 
-// 1. Registrasi Plugin Utama (UPDATE BAGIAN INI)
-// Kita tambahkan methods dan allowedHeaders agar method PUT tidak diblokir browser
+// 1. Registrasi Plugin Utama
 fastify.register(cors, { 
-  origin: true, // Boleh diakses dari mana saja (untuk development)
+  origin: true, 
   methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 });
@@ -37,10 +38,10 @@ fastify.register(jwt, {
   secret: process.env.JWT_SECRET || 'rahasia_super_aman_meow'
 });
 
-// 2. Registrasi Plugin Upload (Wajib untuk FormData)
+// 2. Registrasi Plugin Upload
 fastify.register(multipart);
 
-// 3. Registrasi Folder Static (Agar gambar bisa dibuka di browser)
+// 3. Registrasi Folder Static
 fastify.register(fastifyStatic, {
   root: path.join(__dirname, '../uploads'),
   prefix: '/uploads/', 
@@ -53,6 +54,8 @@ fastify.register(forumRoutes, { prefix: '/api/forum' });
 fastify.register(statsRoutes, { prefix: '/api/stats' });
 fastify.register(laporRoutes, { prefix: '/api/lapor' }); 
 fastify.register(tanggungjawabRoutes, { prefix: '/api/tanggungjawab' });
+fastify.register(donasiRoutes, { prefix: '/api/donasi' });
+fastify.register(metodeRoutes, { prefix: '/api/metode' });
 
 // Endpoint Cek Server
 fastify.get('/', async (request, reply) => {
