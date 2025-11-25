@@ -127,6 +127,33 @@
         </table>
       </div>
     </section>
+    <section class="history-section" style="margin-top: -40px;">
+      <h2>Partner Shelter Kami</h2>
+      <div class="table-wrapper">
+        <table class="donation-table">
+          <thead>
+            <tr>
+              <th style="width: 10%;">No</th>
+              <th style="width: 40%;">Nama Shelter</th>
+              <th style="width: 50%;">Lokasi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="shelterList.length === 0">
+              <td colspan="3" class="text-center">Belum ada data shelter.</td>
+            </tr>
+            <tr v-for="(item, index) in shelterList" :key="item.id">
+              <td>{{ index + 1 }}</td>
+              <td style="font-weight: bold; color: #fff;">{{ item.nama }}</td>
+              <td>
+                <span class="lokasi-badge">📍 {{ item.lokasi }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <div v-if="showPopup" class="popup-overlay" @click.self="closePopup">
       <div class="popup">
         <button class="close-btn" @click="closePopup">✕</button>
@@ -169,6 +196,7 @@ import { jwtDecode } from "jwt-decode";
 const router = useRouter();
 const isLoggedIn = ref(false);
 const username = ref('');
+const shelterList = ref([]);
 
 // Data Nominal
 const nominals = [
@@ -233,11 +261,24 @@ const fetchHistory = async () => {
     console.error("Gagal ambil history donasi:", error);
   }
 };
+
+
+const fetchShelters = async () => {
+  try {
+    // Asumsi endpoint backend adalah /api/shelter
+    const response = await axios.get('http://localhost:3000/api/shelter');
+    // Sesuaikan dengan format response backend (bisa response.data atau response.data.data)
+    shelterList.value = response.data; 
+  } catch (error) {
+    console.error("Gagal ambil data shelter:", error);
+  }
+};
 // -------------------------------------
 
 onMounted(() => {
   fetchMethods(); 
   fetchHistory(); // <--- PANGGIL DI SINI AGAR MUNCUL SAAT LOAD
+  fetchShelters();
   
   const token = localStorage.getItem('token');
   if (token) {
@@ -362,6 +403,8 @@ function finishDonation() {
   showSuccessPopup.value = false;
   router.push('/');
 }
+
+
 </script>
 
 <style scoped>
@@ -682,6 +725,15 @@ textarea { height: 80px; resize: none; }
 
 .label-total { font-weight: bold; color: #fffce8; }
 .value-total { font-weight: bold; color: #f7ca00; font-size: 1.3rem; }
+
+.lokasi-badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  color: #fffce8;
+}
 
 @media (max-width: 768px) {
   .donasi-container { flex-direction: column; padding: 40px 20px; }

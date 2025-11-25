@@ -20,6 +20,7 @@ import tanggungjawabRoutes from './routes/tanggungjawab.js';
 import donasiRoutes from './routes/donasi.js';
 import metodeRoutes from './routes/metode.js';
 import findplaceRoutes from './routes/findplace.js';
+import shelterRoutes from './routes/shelter.js';
 
 dotenv.config();
 
@@ -61,6 +62,7 @@ fastify.register(tanggungjawabRoutes, { prefix: '/api/tanggungjawab' });
 fastify.register(donasiRoutes, { prefix: '/api/donasi' });
 fastify.register(metodeRoutes, { prefix: '/api/metode' });
 fastify.register(findplaceRoutes, { prefix: '/api/findplace' });
+fastify.register(shelterRoutes, { prefix: '/api/shelter' });
 
 // Endpoint Cek Server
 fastify.get('/', async (request, reply) => {
