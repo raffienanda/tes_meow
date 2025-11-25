@@ -1,5 +1,3 @@
-
-````markdown
 # 🐱 Meowlarat - Platform Adopsi & Perawatan Kucing
 
 Selamat datang di repositori **Meowlarat**! Aplikasi web ini membantu menghubungkan pecinta kucing dengan shelter, menyediakan informasi perawatan (Catpedia), dan fitur pelaporan kucing terlantar.
