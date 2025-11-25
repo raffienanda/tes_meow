@@ -23,7 +23,7 @@
     
     <div v-if="adoptedCats.length > 0" class="cats-container">
       <div v-for="cat in adoptedCats" :key="cat.id" class="adopted-card">
-        <img class="cat-photo" :src="cat.img_url || '../src/assets/img/cat-donasi.png'" alt="Kucing Diadopsi" />
+        <img class="cat-photo" :src="getCatImage(cat.img_url)" alt="Kucing Diadopsi" />
         <div class="cat-info">
           <p><strong>Nama :</strong> {{ cat.nama }}</p>
           <p><strong>Umur :</strong> {{ cat.age }}</p>
@@ -79,6 +79,8 @@ const bio = ref('');
 const photo = ref(new URL('../assets/img/profil.png', import.meta.url).href);
 const adoptionCount = ref(0);
 const adoptedCats = ref([]);
+// Import gambar default kucing agar dikenali oleh Vite
+const defaultCatPhoto = new URL('../assets/img/cat-donasi.png', import.meta.url).href;
 
 // State untuk Modal
 const tempName = ref('');
@@ -119,7 +121,7 @@ const fetchUserProfile = async () => {
     }
     
     // Handle Data Kucing
-    adoptedCats.value = userData.adoptedCats || [];
+    adoptedCats.value = userData.cat || [];
     adoptionCount.value = adoptedCats.value.length;
 
   } catch (error) {
@@ -161,6 +163,23 @@ const saveProfile = async () => {
 };
 
 // --- MODAL & UTILS ---
+
+const getCatImage = (url) => {
+  // 1. Jika data kosong, pakai gambar default
+  if (!url) return defaultCatPhoto; 
+  
+  // 2. Jika data adalah URL lengkap (dari internet/placekitten), pakai langsung
+  if (url.startsWith('http')) return url;
+  
+  // 3. Jika data hanya nama file (misal: "luna.jpg" dari CSV), tambahkan path folder backend
+  // Kita asumsikan gambar kucing profil disimpan di folder 'img-lapor' sesuai file yang kamu upload
+  if (!url.startsWith('/')) {
+      return `http://localhost:3000/uploads/img-lapor/${url}`;
+  }
+  // Jika URL adalah path lokal dari backend (misal: /uploads/...)
+  // Pastikan arahkan ke port backend (localhost:3000)
+  return `http://localhost:3000${url}`;
+};
 
 const openModal = () => {
   tempName.value = name.value;

@@ -177,9 +177,15 @@ async function authRoutes(fastify, options) {
   }, async (request, reply) => {
     try {
       const username = request.user.username;
-      const user = await prisma.users.findUnique({ // Perbaikan: prisma.users bukan prisma.user
+      const user = await prisma.users.findUnique({
         where: { username: username },
-        // include: { adoptedCats: true } // Hapus/comment jika relasi belum fix di schema
+        include: { 
+          cat: {
+            where: {
+              adoptdate: { not: null } // ✅ FILTER: Hanya ambil kucing yang punya tanggal adopsi
+            }
+          } 
+        }
       });
 
       if (!user) return reply.code(404).send({ message: 'User tidak ditemukan' });
