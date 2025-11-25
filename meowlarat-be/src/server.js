@@ -19,6 +19,7 @@ import laporRoutes from './routes/lapor.js';
 import tanggungjawabRoutes from './routes/tanggungjawab.js';
 import donasiRoutes from './routes/donasi.js';
 import metodeRoutes from './routes/metode.js';
+import findplaceRoutes from './routes/findplace.js';
 
 dotenv.config();
 
@@ -49,7 +50,8 @@ fastify.register(fastifyStatic, {
 });
 
 // 4. Registrasi Routes
-fastify.register(artikelRoutes, { prefix: '/api' });
+
+fastify.register(artikelRoutes, { prefix: '/api/artikel' });
 fastify.register(authRoutes, { prefix: '/api/auth' });
 fastify.register(catRoutes, { prefix: '/api/cats' });
 fastify.register(forumRoutes, { prefix: '/api/forum' });
@@ -58,6 +60,7 @@ fastify.register(laporRoutes, { prefix: '/api/lapor' });
 fastify.register(tanggungjawabRoutes, { prefix: '/api/tanggungjawab' });
 fastify.register(donasiRoutes, { prefix: '/api/donasi' });
 fastify.register(metodeRoutes, { prefix: '/api/metode' });
+fastify.register(findplaceRoutes, { prefix: '/api/findplace' });
 
 // Endpoint Cek Server
 fastify.get('/', async (request, reply) => {

@@ -5,7 +5,3 @@ package_lock.json
 .env
 
 /generated/prisma
-
-../meowlarat-fe/node_modules
-../meowlarat-fe/package.json
-../meowlarat-fe/package_lock.json
