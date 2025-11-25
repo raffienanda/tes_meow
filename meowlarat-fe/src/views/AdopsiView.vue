@@ -1,368 +1,306 @@
 <template>
-  <div class="donasi-page">
+  <div>
     <NavbarLogin v-if="isLoggedIn" />
     <Navbar v-else />
 
-    <section class="donasi-container">
-      <div class="donasi-left">
-        <h1>Bantu kucing jalanan</h1>
-        <p>Donasi Anda membantu menyediakan makan, obat, dan perlindungan.</p>
-
-        <div class="step-box">
-          <h3>1. Pilih Metode Pembayaran</h3>
-          
-          <div class="payment-methods">
-            <button
-              v-for="catName in categories"
-              :key="catName"
-              :class="{ 
-                'active': selectedCategory === catName,
-                'disabled-method': isCategoryEmpty(catName) 
-              }"
-              @click="openPaymentCategory(catName)"
-            >
-              {{ catName }}
-              <span v-if="isCategoryEmpty(catName)" class="badge-soon-method">Soon</span>
-            </button>
+    <div class="adopt-page">
+      <section class="hero-adopt" id="default-view">
+        <div class="hero-text-container">
+          <h1>Adopsi Kebahagiaan Hari Ini</h1>
+          <p>Banyak kucing lucu dan menggemaskan menunggu keluarga baru. Mulailah proses adopsi dan temukan sahabat terbaik Anda di sini.</p>
+        </div>
+        <div class="cta-container">
+          <div class="cta-button-wrapper">
+            <button class="cta-adopt-btn" @click="scrollToSection('adopsi-view')">Adopsi</button>
+            <button class="cta-list-btn" @click="scrollToSection('list-view')">List Adopsi Saya</button>
           </div>
+          <img src="../assets/img/Hero-adopt.jpg" alt="Kucing melihat ke atas" class="hero-cat-image">
+        </div>
+      </section>
+
+      <hr class="section-divider" />
+
+      <section class="cat-list-section" id="adopsi-view">
+         <h1 class="cat-list-title">Kucing Menunggu Kamu</h1>
+        <p class="cat-list-description">Lihat daftar kucing yang siap diadopsi...</p>
+
+        <div class="cat-list-wrapper">
+          <div class="cat-grid">
+            <div v-for="(cat, index) in displayedCats" :key="index" class="cat-card" @click="showCatModal(cat)">
+              <img :src="getImgUrl(cat.img_url)" :alt="cat.nama" class="cat-image">
+              <p class="cat-name">{{ cat.nama }}</p>
+            </div>
+          </div>
+           <div class="button-group">
+            <button v-if="limit < availableCats.length" class="more-btn" @click="loadMore">Lihat lebih banyak</button>
+            <button v-if="limit > 8" class="more-btn less-btn" @click="showLess">Lihat lebih sedikit</button>
+          </div>
+        </div>
+      </section>
+
+      <hr class="section-divider" />
+
+      <section class="my-list-section" id="list-view">
+        <h1 class="my-list-title">List Kucing Anda</h1>
+        <p class="my-list-description">Di sini kamu bisa melihat status permintaan adopsi serta daftar kucing yang sudah berhasil kamu adopsi.</p>
+
+        <div class="list-card-wrapper">
+          <h2 class="sub-section-title">Status Adopsi</h2>
           
-          <div v-if="selectedMethodName" class="selected-info">
-            <p>Metode dipilih: <strong>{{ selectedMethodName }}</strong></p>
-            
-            <div v-if="selectedBankInfo" class="bank-details-box">
-              <p class="label-rek">Silakan transfer ke:</p>
-              <div class="rek-number">{{ selectedBankInfo.rek }}</div>
-              <p class="rek-owner">a.n. {{ selectedBankInfo.an }}</p>
+          <div v-if="verificationList.length === 0" class="empty-state">
+            <p>Belum ada permintaan adopsi.</p>
+          </div>
+
+          <div v-for="(verif, index) in verificationList" :key="'verif-' + index" class="status-card">
+            <img :src="verif.image" :alt="verif.name" class="status-cat-image">
+            <div class="status-details">
+              <p>Nama : {{ verif.name }}</p>
+              <p>Umur : {{ verif.age }}</p>
+              
+              <p>Tanggal Adopsi : {{ verif.dob }}</p>
+              
+              <div v-if="verif.isReadyToTake">
+                <p class="status-text success">Disetujui Admin! Silakan ambil kucingmu.</p>
+                <button class="ambil-btn" @click="handleTakeCat(verif.id, verif.name)">
+                  Ambil Kucing
+                </button>
+              </div>
+              <div v-else>
+                <p class="status-text pending">Status : Menunggu Verifikasi</p>
+              </div>
+
             </div>
           </div>
         </div>
 
-        <div v-if="selectedCategory === 'QR Code' && showQrisBox" class="qris-container">
-          <h3>Scan QRIS di bawah ini: <br>a.n Sky Emperor</h3>
-          
-          <img 
-            :src="`/img/${selectedLogo}`" 
-            alt="QRIS Code" 
-            class="qris-img" 
-            @error="$event.target.src='/img/other.png'"
-          />
-          
-          <p class="small-text">Scan menggunakan GoPay, OVO, Dana, atau Mobile Banking</p>
-        </div>
-
-        <div v-if="selectedMethodId" class="step-box">
-          <h3>2. Pilih Nominal Donasi</h3>
-          <div class="nominal-buttons">
-            <button
-              v-for="nominal in nominals"
-              :key="nominal.value"
-              :class="{ active: selectedNominal === nominal.value }"
-              @click="pilihNominal(nominal.value)"
-            >
-              {{ nominal.label }}
-            </button>
-            <button :class="{ active: isCustomNominal }" @click="pilihCustom">Custom</button>
+        <div class="list-card-wrapper">
+          <h2 class="sub-section-title history-title">Sejarah Adopsi Kucing</h2>
+          <div v-for="(history, index) in historyList" :key="'history-' + index" class="status-card">
+            <img :src="history.image" :alt="history.name" class="status-cat-image">
+            <div class="status-details">
+              <p>Nama : {{ history.name }}</p>
+              <p>Umur : {{ history.age }}</p>
+              <p>Tanggal Adopsi : {{ history.dob }}</p>
+              <p>Diadopsi Selama : {{ history.duration }}</p>
+              <router-link to="/form" class="form-btn">Form</router-link>
+            </div>
           </div>
-
-          <input v-if="isCustomNominal" type="number" placeholder="Masukkan nominal (Min 10000)" v-model="customNominal" class="custom-input" />
-
-          <h3>Pesan (Opsional)</h3>
-          <textarea v-model="pesan" placeholder="Tulis pesan semangat..."></textarea>
         </div>
+      </section>
+    </div>
 
-        <div v-if="selectedMethodId && (selectedNominal || customNominal)" class="step-box">
-          <h3>3. Upload Bukti Transfer</h3>
-          <input type="file" @change="handleFileUpload" accept="image/*" class="file-input" />
-          <button class="submit-btn" @click="submitDonasi" :disabled="isLoading">
-            {{ isLoading ? 'Mengirim...' : 'Kirim Donasi' }}
-          </button>
+    <div class="modal-overlay" v-if="isModalOpen" @click.self="closeCatModal">
+      <div class="cat-info-modal">
+        <div class="modal-header">
+          <h2>Informasi Kucing</h2>
+          <button class="close-btn" @click="closeCatModal">X</button>
         </div>
-      </div>
-
-      <div class="donasi-right">
-        <div class="cat-image">
-          <img src="../assets/img/cat-donasi.png" alt="kucing" />
-        </div>
-        <div class="info-box">
-          <p>Terima kasih orang baik!</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="history-section">
-      <h2>Riwayat & Total Donasi</h2>
-      <div class="table-wrapper">
-        <table class="donation-table">
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Nama Donatur</th>
-              <th>Metode</th>
-              <th>Pesan</th>
-              <th class="text-right">Nominal</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="historyList.length === 0">
-              <td colspan="5" class="text-center">Belum ada donasi masuk. Jadilah yang pertama!</td>
-            </tr>
-            <tr v-for="(item, index) in historyList" :key="item.id">
-              <td>{{ index + 1 }}</td>
-              <td>{{ item.username }}</td>
-              <td>
-                <span class="method-badge">
-                  {{ item.metode_donasi_metodeTometode ? item.metode_donasi_metodeTometode.nama : '-' }}
-                </span>
-              </td>
-              <td class="pesan-cell">"{{ item.pesan }}"</td>
-              <td class="text-right nominal-cell">Rp {{ formatRupiah(item.nominal) }}</td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colspan="4" class="text-right label-total">Total Terkumpul</td>
-              <td class="text-right value-total">Rp {{ formatRupiah(grandTotal) }}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </section>
-
-    <div v-if="showPopup" class="popup-overlay" @click.self="closePopup">
-      <div class="popup">
-        <button class="close-btn" @click="closePopup">✕</button>
-        <h3>Pilih {{ selectedCategory }}</h3>
-
-        <div class="bank-grid">
-          <div 
-            v-for="method in filteredMethods" 
-            :key="method.id" 
-            class="bank-item"
-            :class="{ 'disabled': !method.isActive, 'selected': selectedMethodId === method.id }"
-            @click="selectMethod(method)"
-          >
-            <img :src="`/img/${method.logo}`" :alt="method.nama" @error="$event.target.src='/img/other.png'" />
-            <p>{{ method.nama }}</p>
-            <span v-if="!method.isActive" class="badge-soon">Soon</span>
+        <div class="modal-content">
+          <div class="cat-image-detail">
+            <img :src="getImgUrl(selectedCat.img_url) || defaultImage" :alt="selectedCat.name" class="cat-detail-img">
+          </div>
+          <div class="cat-details-text">
+            <p><strong>Nama : </strong>{{ selectedCat.nama }}</p>
+            <p><strong>Umur : </strong>{{ selectedCat.age }}</p>
+            <p><strong>Jenis Kelamin : </strong>{{ selectedCat.gender }}</p>
+            <p><strong>Ras : </strong>{{ selectedCat.ras }}</p>
+            <p><strong>Karakter : </strong>{{ selectedCat.karakteristik }}</p>
+            <p><strong>Status vaksinasi : </strong>{{ selectedCat.isVaccinated ? 'Sudah' : 'Belum' }}</p>
+            <button class="adopt-detail-btn" @click="handleAdoptClick">Adopsi</button>
           </div>
         </div>
       </div>
     </div>
 
-    <div v-if="showSuccessPopup" class="popup-overlay">
-      <div class="popup confirm">
-        <h2>Terima kasih! 🐾</h2>
-        <p>Donasi Anda telah kami terima dan akan diverifikasi.</p>
-        <button class="cta-btn" @click="finishDonation">Kembali ke Beranda</button>
-      </div>
-    </div>
   </div>
 </template>
 
-<script setup>
-import Navbar from '@/components/Navbar.vue'
-import NavbarLogin from '../components/NavbarLogin.vue';
-import { ref, onMounted, computed } from 'vue'
+<script>
 import axios from 'axios';
-import { useRouter } from 'vue-router';
-import { jwtDecode } from "jwt-decode"; 
+import Navbar from '../components/Navbar.vue';
+import NavbarLogin from '../components/NavbarLogin.vue';
+import defaultImageSrc from '../assets/img/Hero-adopt.jpg';
 
-const router = useRouter();
-const isLoggedIn = ref(false);
-const username = ref('');
-
-// Data Nominal
-const nominals = [
-  { label: 'Rp 10k', value: 10000 },
-  { label: 'Rp 50k', value: 50000 },
-  { label: 'Rp 100k', value: 100000 },
-  { label: 'Rp 200k', value: 200000 },
-  { label: 'Rp 500k', value: 500000 },
-  { label: 'Rp 1000k', value: 1000000 }
-];
-
-// Kategori Pembayaran Utama
-const categories = ['Transfer Bank', 'QR Code', 'E-Wallet'];
-
-// State Data dari Database
-const allMethods = ref([]);
-const historyList = ref([]); // State untuk tabel history
-const grandTotal = ref(0);   // State untuk total donasi
-
-// State UI
-const selectedCategory = ref(''); 
-const selectedMethodName = ref('');
-const selectedMethodId = ref(null);
-const selectedBankInfo = ref(null);
-const selectedLogo = ref('');
-const showQrisBox = ref(false);
-
-const selectedNominal = ref(null);
-const customNominal = ref('');
-const isCustomNominal = ref(false);
-const pesan = ref('');
-const fileBukti = ref(null);
-const showPopup = ref(false);
-const showSuccessPopup = ref(false);
-const isLoading = ref(false);
-
-// Helper Format Rupiah
-function formatRupiah(num) {
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-}
-
-// Fetch Data Payment Methods
-const fetchMethods = async () => {
-  try {
-    const response = await axios.get('http://localhost:3000/api/metode');
-    allMethods.value = response.data;
-  } catch (error) {
-    console.error("Gagal mengambil metode pembayaran:", error);
-  }
-};
-
-// Fetch Data History Donasi (NEW)
-const fetchHistory = async () => {
-  try {
-    const response = await axios.get('http://localhost:3000/api/donasi');
-    historyList.value = response.data.data;
-    grandTotal.value = response.data.total;
-  } catch (error) {
-    console.error("Gagal ambil history donasi:", error);
-  }
-};
-
-onMounted(() => {
-  fetchMethods(); 
-  fetchHistory(); // Ambil history saat load page
-  
-  const token = localStorage.getItem('token');
-  if (token) {
-    isLoggedIn.value = true;
-    try {
-      const decoded = jwtDecode(token);
-      username.value = decoded.username; 
-    } catch (e) {
-      console.error("Token invalid");
-    }
-  }
-});
-
-// Filter metode berdasarkan kategori yang dipilih
-const filteredMethods = computed(() => {
-  return allMethods.value.filter(m => m.category === selectedCategory.value);
-});
-
-// Cek apakah kategori kosong/tidak ada yang aktif (untuk label 'Soon' di tombol utama)
-function isCategoryEmpty(catName) {
-  // Cek apakah ada item di kategori ini yang isActive = true
-  const hasActive = allMethods.value.some(m => m.category === catName && m.isActive);
-  return !hasActive; 
-}
-
-function openPaymentCategory(catName) {
-  if (isCategoryEmpty(catName)) return; // Jangan buka jika tidak ada metode aktif
-
-  selectedCategory.value = catName;
-  
-  // Reset pilihan
-  selectedMethodName.value = '';
-  selectedMethodId.value = null;
-  selectedBankInfo.value = null;
-  showQrisBox.value = false;
-
-  if (catName === 'QR Code') {
-    // Jika QR Code, cari data QRIS di list dan otomatis pilih
-    const qrisMethod = allMethods.value.find(m => m.category === 'QR Code' && m.isActive);
-    if (qrisMethod) {
-      selectMethod(qrisMethod);
-      showQrisBox.value = true;
-    }
-  } else {
-    // Jika Bank/E-wallet buka popup
-    showPopup.value = true;
-  }
-}
-
-function selectMethod(method) {
-  if (!method.isActive) return;
-
-  selectedMethodName.value = method.nama;
-  selectedMethodId.value = method.id;
-  selectedLogo.value = method.logo; 
-  
-  if (method.rek && method.an) {
-    selectedBankInfo.value = {
-      rek: method.rek,
-      an: method.an
+export default {
+  name: 'AdoptView',
+  components: { Navbar, NavbarLogin },
+  data() {
+    return {
+      isLoggedIn: false,
+      currentUser: null,
+      isModalOpen: false,
+      selectedCat: {},
+      
+      availableCats: [],    
+      verificationList: [], 
+      historyList: [],      
+      
+      limit: 8,
+      defaultImage: defaultImageSrc
     };
-  } else {
-    selectedBankInfo.value = null;
-  }
+  },
+  computed: {
+    displayedCats() {
+      return this.availableCats.slice(0, this.limit);
+    }
+  },
+  methods: {
+    // ... (Method getImgUrl, scrollToSection, showCatModal, closeCatModal SAMA) ...
+    getImgUrl(path) {
+      if (!path) return this.defaultImage;
+      if (path.startsWith('http')) return path;
+      let cleanPath = path.replace(/\\/g, '/');
+      if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
+      return `http://localhost:3000/uploads/img-lapor/${cleanPath}`;
+    },
 
-  closePopup();
-}
+    scrollToSection(id) {
+      const element = document.getElementById(id);
+      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    },
 
-function pilihNominal(val) {
-  selectedNominal.value = val;
-  isCustomNominal.value = false;
-  customNominal.value = '';
-}
+    showCatModal(cat) {
+      this.selectedCat = cat;
+      this.isModalOpen = true;
+    },
+    closeCatModal() {
+      this.isModalOpen = false;
+      this.selectedCat = {};
+    },
 
-function pilihCustom() {
-  selectedNominal.value = null;
-  isCustomNominal.value = true;
-}
-
-function handleFileUpload(event) {
-  fileBukti.value = event.target.files[0];
-}
-
-function closePopup() {
-  showPopup.value = false;
-}
-
-async function submitDonasi() {
-  if (!isLoggedIn.value) {
-    alert("Silakan login terlebih dahulu untuk berdonasi.");
-    return;
-  }
-
-  const finalNominal = isCustomNominal.value ? customNominal.value : selectedNominal.value;
-
-  if (!selectedMethodId.value) return alert("Pilih metode pembayaran dulu!");
-  if (!finalNominal) return alert("Pilih nominal donasi!");
-  if (!fileBukti.value) return alert("Mohon upload bukti transfer!");
-
-  isLoading.value = true;
-
-  try {
-    const formData = new FormData();
-    formData.append('nominal', finalNominal);
-    formData.append('pesan', pesan.value);
-    formData.append('metode', selectedMethodId.value);
-    formData.append('username', username.value);
-    formData.append('bukti_transfer', fileBukti.value);
-
-    await axios.post('http://localhost:3000/api/donasi', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
+    async handleAdoptClick() {
+      const token = localStorage.getItem('token');
+      if (!token || !this.currentUser) {
+        alert("Silakan login terlebih dahulu untuk mengadopsi!");
+        this.$router.push('/login');
+        return;
       }
-    });
+      if (!confirm(`Apakah kamu yakin ingin mengajukan adopsi untuk ${this.selectedCat.nama}?`)) return;
 
-    showSuccessPopup.value = true;
-    fetchHistory(); // Refresh tabel setelah sukses donasi
-  } catch (error) {
-    console.error(error);
-    alert("Gagal mengirim donasi. Coba lagi.");
-  } finally {
-    isLoading.value = false;
+      try {
+        await axios.put(
+          `http://localhost:3000/api/cats/adopt/${this.selectedCat.id}`,
+          { username: this.currentUser }, 
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        alert(`Permintaan adopsi ${this.selectedCat.nama} berhasil dikirim!`);
+        this.closeCatModal();
+        await this.refreshAllData();
+        this.$nextTick(() => { this.scrollToSection('list-view'); });
+      } catch (error) {
+        console.error("Gagal mengadopsi:", error);
+        alert(error.response?.data?.message || "Terjadi kesalahan.");
+      }
+    },
+
+    // --- BARU: Handle Tombol AMBIL ---
+    async handleTakeCat(catId, catName) {
+        if(!confirm(`Apakah anda yakin sudah mengambil ${catName}? Kucing ini akan dipindahkan ke histori anda.`)) return;
+        
+        const token = localStorage.getItem('token');
+        try {
+            await axios.put(
+                `http://localhost:3000/api/cats/take/${catId}`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            alert(`${catName} berhasil diambil! Selamat memelihara.`);
+            await this.refreshAllData(); // Refresh agar pindah ke history
+        } catch (error) {
+            console.error("Gagal update status ambil:", error);
+            alert("Gagal memproses permintaan.");
+        }
+    },
+
+    async refreshAllData() {
+        await this.fetchCats();
+        await this.fetchPending();
+        await this.fetchHistory();
+    },
+
+    // Fetch Kucing Available
+    async fetchCats() {
+      try {
+        const response = await axios.get('http://localhost:3000/api/cats');
+        this.availableCats = response.data;
+      } catch (error) {
+        console.error("Gagal ambil data kucing:", error);
+      }
+    },
+
+    // Fetch Data Pending (Diupdate logikanya)
+    async fetchPending() {
+      if (!this.currentUser) return;
+      try {
+        const response = await axios.get(`http://localhost:3000/api/cats/pending/${this.currentUser}`);
+        
+        this.verificationList = response.data.map(cat => {
+            // Cek apakah tanggal sudah diisi admin?
+            const hasDate = cat.adoptdate !== null;
+            
+            return {
+                id: cat.id,
+                name: cat.nama,
+                age: cat.age,
+                // Jika sudah ada tanggal, tampilkan. Jika belum, strip.
+                dob: hasDate ? new Date(cat.adoptdate).toLocaleDateString('id-ID') : '-',
+                image: this.getImgUrl(cat.img_url),
+                // Flag untuk menentukan tampilan tombol vs teks pending
+                isReadyToTake: hasDate 
+            };
+        });
+      } catch (error) {
+        console.error("Gagal ambil data pending:", error);
+      }
+    },
+
+    // Fetch Data History (Selesai)
+    async fetchHistory() {
+      if (!this.currentUser) return;
+      try {
+        const response = await axios.get(`http://localhost:3000/api/cats/history/${this.currentUser}`);
+        
+        this.historyList = response.data.map(cat => {
+          let duration = 'Baru saja';
+          if (cat.adoptdate) {
+            const adoptDate = new Date(cat.adoptdate);
+            const currentDate = new Date();
+            const diffTime = Math.abs(currentDate - adoptDate);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+            duration = `${diffDays} Hari`;
+          }
+
+          return {
+            name: cat.nama,
+            age: cat.age,
+            dob: cat.adoptdate ? new Date(cat.adoptdate).toLocaleDateString('id-ID') : '-', 
+            duration: duration, 
+            image: this.getImgUrl(cat.img_url),
+          };
+        });
+      } catch (error) {
+        console.error("Gagal ambil history:", error);
+      }
+    },
+
+    loadMore() { this.limit += 8; },
+    showLess() { 
+      this.limit = 8; 
+      this.$nextTick(() => { this.scrollToSection('adopsi-view'); });
+    }
+  },
+  mounted() {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('username');
+
+    if (token && user) {
+      this.isLoggedIn = true;
+      this.currentUser = user;
+      this.refreshAllData();
+    } else {
+      this.fetchCats();
+    }
   }
-}
-
-function finishDonation() {
-  showSuccessPopup.value = false;
-  router.push('/');
 }
 </script>
 
