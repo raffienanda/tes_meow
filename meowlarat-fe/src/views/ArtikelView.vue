@@ -1,5 +1,6 @@
 <template>
-  <Navbar />
+    <NavbarLogin v-if="isLoggedIn" />
+    <Navbar v-else />
 
   <section class="article-hero error" v-if="isError">
     <div class="article-header-container">
@@ -75,7 +76,9 @@
 import { ref, onMounted, watch } from "vue"; // 1. Tambahkan 'watch' disini
 import { useRoute } from "vue-router";
 import Navbar from "../components/Navbar.vue";
+import NavbarLogin from "../components/NavbarLogin.vue"; 
 
+const isLoggedIn = ref(false);
 const route = useRoute();
 const artikel = ref({});
 const related = ref([]);
@@ -123,6 +126,10 @@ async function loadRelated() {
 }
 
 onMounted(() => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    isLoggedIn.value = true;
+  }
   loadArticle();
   loadRelated();
 });

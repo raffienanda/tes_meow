@@ -1,6 +1,6 @@
 <template>
-  <Navbar />
-
+  <NavbarLogin v-if="isLoggedIn" />
+  <Navbar v-else />
   <section class="catpedia-hero">
     <div class="hero-content">
       <h1><span>Cat</span>Pedia</h1>
@@ -50,7 +50,7 @@
         </div>
       </div>
 
-      <button class="load-more" @click="loadMore">Lebih Banyak</button>
+      <button v-if="hasMore" class="load-more" @click="loadMore">Lebih Banyak</button>
     </div>
 
   </section>
@@ -59,40 +59,45 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import Navbar from "../components/Navbar.vue";
+// 1. Import NavbarLogin
+import NavbarLogin from "../components/NavbarLogin.vue"; 
+
+// 2. State untuk status login
+const isLoggedIn = ref(false);
 
 const todaysArticle = ref(null);
 const latestArticles = ref([]);
 const page = ref(1);
-const limit = 6;
+const limit = 4;
+const hasMore = ref(true);
 
-// --- PERBAIKAN 3: Fungsi Helper URL Gambar ---
 function getImgUrl(path) {
-  // 1. Jika path kosong/null, return placeholder
   if (!path) return 'https://placehold.co/600x400?text=No+Image';
-  
-  // 2. Jika path sudah http (link luar/picsum), langsung pakai
   if (path.startsWith('http')) return path;
-
-  // 3. Bersihkan path dari double slash atau backslash
+  
   let cleanPath = path.replace(/\\/g, '/');
-  // Hapus slash di depan jika ada (biar ga double //)
   if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
 
-  // 4. Gabungkan dengan URL Backend
   return `http://localhost:3000/uploads/img-artikel/${cleanPath}`;
 }
 
 async function fetchArticles() {
   try {
-    const res = await fetch(`/api/artikel?page=${page.value}&limit=${limit}`);
+    const res = await fetch(`http://localhost:3000/api/artikel?page=${page.value}&limit=${limit}`);
     const json = await res.json();
+    
+    const newArticles = json.data || [];
 
-    if (page.value === 1 && json.data.length > 0) {
-      const randomIndex = Math.floor(Math.random() * json.data.length);
-      todaysArticle.value = json.data[randomIndex];
+    if (newArticles.length < limit) {
+      hasMore.value = false;
     }
 
-    latestArticles.value.push(...json.data);
+    if (page.value === 1 && newArticles.length > 0) {
+      const randomIndex = Math.floor(Math.random() * newArticles.length);
+      todaysArticle.value = newArticles[randomIndex];
+    }
+
+    latestArticles.value.push(...newArticles);
   } catch (error) {
     console.error("Gagal mengambil artikel:", error);
   }
@@ -104,10 +109,16 @@ function loadMore() {
 }
 
 onMounted(() => {
+  // 3. Cek Token saat mounted untuk update status Navbar
+  const token = localStorage.getItem('token');
+  if (token) {
+    isLoggedIn.value = true;
+  }
+
+  // Jalankan fetch artikel
   fetchArticles();
 });
 </script>
-
 <style scoped>
 /* ... Style CSS TETAP SAMA seperti file aslimu ... */
 body {
