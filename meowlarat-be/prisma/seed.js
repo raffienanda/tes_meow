@@ -14,7 +14,7 @@ async function main() {
     {
       nama: "Meow City Petshop",
       category: "Petshop",
-      img_url: "https://placehold.co/600x400/png?text=Meow+City",
+      img_url: "petshop3.png",
       address: "Jl. Ir. H. Juanda No. 100, Dago, Bandung",
       latitude: -6.8858,
       longitude: 107.6143,
@@ -24,7 +24,7 @@ async function main() {
     {
       nama: "Klinik Hewan Sehat",
       category: "Vet",
-      img_url: "https://placehold.co/600x400/png?text=Klinik+Hewan",
+      img_url: "vet1.png",
       address: "Jl. R.E. Martadinata No. 45, Bandung",
       latitude: -6.9088,
       longitude: 107.6195,
@@ -34,7 +34,7 @@ async function main() {
     {
       nama: "Grooming Centre PVJ",
       category: "Grooming",
-      img_url: "https://placehold.co/600x400/png?text=Grooming",
+      img_url: "grooming1.png",
       address: "Paris Van Java, Sukajadi, Bandung",
       latitude: -6.8897,
       longitude: 107.5964,
@@ -44,7 +44,7 @@ async function main() {
     {
       nama: "Pet Station Antapani",
       category: "Petshop",
-      img_url: "https://placehold.co/600x400/png?text=Pet+Station",
+      img_url: "petshop2.png",
       address: "Jl. Terusan Jakarta No. 70, Antapani",
       latitude: -6.9135,
       longitude: 107.6599,
@@ -54,7 +54,7 @@ async function main() {
     {
       nama: "Pusat Pakan Kucing Setiabudi",
       category: "Petshop",
-      img_url: "https://placehold.co/600x400/png?text=Pakan+Kucing",
+      img_url: "petshop1.png",
       address: "Jl. Dr. Setiabudi No. 120, Bandung",
       latitude: -6.8631,
       longitude: 107.5960,

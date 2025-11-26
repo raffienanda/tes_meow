@@ -25,7 +25,7 @@
 
     <div ref="petshopsCarousel" class="carousel-track">
       <div v-for="(shop, index) in petshops" :key="index" class="place-card">
-        <img :src="shop.img_url || defaultImg" :alt="shop.nama" />
+        <img :src="getImgUrl(shop.img_url)" :alt="shop.nama" />
         <h3>{{ shop.nama }}</h3>
         <p class="address">{{ shop.address }}</p>
         <div class="stars">
@@ -65,7 +65,6 @@ import defaultImg from "../assets/img/cat-icon.png";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// Fix icon marker yang sering hilang di Vue/Vite
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
@@ -88,9 +87,25 @@ const onlineShops = ref([]);
 const mapContainer = ref(null);
 const map = ref(null);
 
-// Carousel Refs
 const petshopsCarousel = ref(null);
 const onlineCarousel = ref(null);
+
+// --- NEW HELPER FUNCTION ---
+function getImgUrl(path) {
+  // 1. If path is null/empty, return the imported default asset
+  if (!path) return defaultImg;
+  
+  // 2. If it's an external link (starts with http), return as is
+  if (path.startsWith('http')) return path;
+
+  // 3. Clean path
+  let cleanPath = path.replace(/\\/g, '/');
+  if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
+
+  // 4. Return backend URL pointing to 'img-petplace'
+  return `http://localhost:3000/uploads/img-petplace/${cleanPath}`;
+}
+// ---------------------------
 
 const scrollCarousel = (type, direction) => {
   const carousel = type === "petshops" ? petshopsCarousel.value : onlineCarousel.value;
@@ -101,11 +116,9 @@ const scrollCarousel = (type, direction) => {
 };
 
 onMounted(async () => {
-  // 1. Cek Login
   const token = localStorage.getItem('token');
   if (token) isLoggedIn.value = true;
 
-  // 2. Inisialisasi Map (Bandung)
   if (mapContainer.value) {
     map.value = L.map(mapContainer.value).setView([-6.9175, 107.6191], 12);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -113,14 +126,12 @@ onMounted(async () => {
     }).addTo(map.value);
   }
 
-  // 3. Fetch Data Fisik (Peta)
   try {
     const resMap = await fetch('http://localhost:3000/api/findplace');
     if (resMap.ok) {
         const dataMap = await resMap.json();
         petshops.value = dataMap;
 
-        // Render Marker ke Peta
         dataMap.forEach((place) => {
           if (place.latitude && place.longitude) {
             L.marker([place.latitude, place.longitude])
@@ -137,7 +148,6 @@ onMounted(async () => {
     console.error("Gagal ambil data map:", error);
   }
 
-  // 4. Fetch Data Online Shop (Dinamis dari DB)
   try {
     const resOnline = await fetch('http://localhost:3000/api/findplace/online');
     if (resOnline.ok) {
@@ -145,7 +155,6 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error("Gagal ambil data online shop:", error);
-    // Fallback jika error fetch
     onlineShops.value = [];
   }
 });
@@ -159,12 +168,10 @@ body {
 }
 
 .map-placeholder {
-  height: 400px; /* Increased slightly for better view */
+  height: 400px;
   width: 100%;
   border-radius: 15px;
-  z-index: 1; /* Ensures map controls sit correctly */
-  /* Remove display:flex/justify-center from previous placeholder styling 
-     so Leaflet can render tiles correctly */
+  z-index: 1;
   display: block; 
 }
 
@@ -208,18 +215,6 @@ body {
   font-weight: 700;
   font-size: 1.8rem;
   margin-bottom: 25px;
-}
-
-/* Map Placeholder */
-.map-placeholder {
-  background: #f0f9ff;
-  border-radius: 15px;
-  height: 350px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #666;
-  font-size: 1rem;
 }
 
 /* Header for carousel */
