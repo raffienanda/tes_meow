@@ -118,62 +118,6 @@ async function artikelRoutes(fastify, options) {
       return reply.code(500).send({ message: 'Gagal mengambil artikel', error: error.message });
     }
   });
-
-  // HAPUS!! GAJADII!!! POST /artikel (admin)
-  // fastify.post('/', async (request, reply) => {
-  //   try {
-  //     const parts = request.parts();
-  //     let body = {};
-  //     let img_url = ''; 
-
-  //     // Loop parsing multipart
-  //     for await (const part of parts) {
-  //       if (part.file) {
-  //         // Simpan file gambar ke folder uploads/img-artikel
-  //         const extension = path.extname(part.filename);
-  //         const fileName = `artikel-${Date.now()}${extension}`;
-          
-  //         // Pastikan path folder ini sesuai dengan struktur project Anda
-  //         const savePath = path.join(__dirname, '../../uploads/img-artikel', fileName);
-
-  //         await pump(part.file, fs.createWriteStream(savePath));
-
-  //         // URL akses publik
-  //         img_url = `/uploads/img-artikel/${fileName}`;
-  //       } else {
-  //         // Ambil field teks (nama, category, teks)
-  //         body[part.fieldname] = part.value;
-  //       }
-  //     }
-
-  //     // Validasi manual karena multipart tidak otomatis masuk request.body
-  //     if (!body.nama || !body.category || !body.teks) {
-  //       return reply.code(400).send({ message: 'nama, category, dan teks wajib diisi' });
-  //     }
-
-  //     // Create ke database
-  //     const created = await prisma.artikel.create({
-  //       data: {
-  //         img_url: img_url || '', // Pakai path gambar lokal jika ada upload
-  //         nama: body.nama,
-  //         category: body.category,
-  //         teks: body.teks
-  //       }
-  //     });
-
-  //     return reply.code(201).send({
-  //       message: 'Artikel berhasil dibuat',
-  //       data: {
-  //           ...created,
-  //           color: getColorForCategory(created.category)
-  //       }
-  //     });
-
-  //   } catch (error) {
-  //     fastify.log.error(error);
-  //     return reply.code(500).send({ message: 'Gagal membuat artikel', error: error.message });
-  //   }
-  // });
 }
 
 export default artikelRoutes;

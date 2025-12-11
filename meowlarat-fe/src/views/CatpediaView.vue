@@ -31,7 +31,7 @@
     </div>
 
     <div class="artikel-terbaru-section">
-      <h2 class="section-title">Artikel Terbaru</h2>
+      <h2 class="section-title">Artikel Lainnya</h2>
 
       <div class="artikel-grid" v-if="latestArticles.length">
         <div

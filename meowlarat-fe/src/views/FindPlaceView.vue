@@ -5,7 +5,7 @@
   <section class="findplace-hero">
     <div class="container">
       <h1><span>Find</span>Place</h1>
-      <p>Cari lokasi Petshop, Klinik Hewan, dan Toko Online Terpercaya di sekitarmu.</p>
+      <p>Cari lokasi Petshop, Klinik Hewan, dan Toko Online Terpercaya.</p>
     </div>
   </section>
 
