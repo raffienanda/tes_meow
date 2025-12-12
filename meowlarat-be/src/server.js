@@ -71,8 +71,9 @@ fastify.get('/', async (request, reply) => {
 
 const start = async () => {
   try {
-    await fastify.listen({ port: 3000 });
-    console.log('Server berjalan di http://localhost:3000');
+    // TAMBAHKAN host: '0.0.0.0' agar bisa diakses device lain satu wifi
+    await fastify.listen({ port: 3000, host: '0.0.0.0' }); 
+    console.log('Server berjalan di http://0.0.0.0:3000');
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
